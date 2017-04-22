@@ -267,7 +267,7 @@ P_nnp_tsne_tst = compute_joint_probabilities(testing_targets[:mseModel_tst.shape
 P_nnp_tsne_tst = P_nnp_tsne_tst.reshape(P_nnp_tsne_tst.shape[0]*P_nnp_tsne_tst.shape[1],-1)
 P_tr = compute_joint_probabilities(training_data[:mseModel_tr.shape[0],:], batch_size=mseModel_tr.shape[0], verbose=0, perplexity=30) #original space
 P_tr = P_tr.reshape(P_tr.shape[0]*P_tr.shape[1],-1)
-P_tst = compute_joint_probabilities(testing_targets[:mseModel_tst.shape[0],:], batch_size=mseModel_tst.shape[0], verbose=0, perplexity=30) #original space
+P_tst = compute_joint_probabilities(testing_data[:mseModel_tst.shape[0],:], batch_size=mseModel_tst.shape[0], verbose=0, perplexity=30) #original space
 P_tst = P_tst.reshape(P_tst.shape[0]*P_tst.shape[1],-1)
 
 mseModel_err_tr_nnp_data = np.sum(P_nnp_tsne_tr*np.log(P_nnp_tsne_tr/P_tr))
