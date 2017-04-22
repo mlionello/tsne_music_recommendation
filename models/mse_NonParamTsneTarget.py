@@ -11,8 +11,25 @@ from keras.optimizers import SGD, RMSprop
 import csv
 import sys
 import re
+import datetime
+import os
 
+####################################################################################################
+#
+#                                   PARAMETERS SETTINGS
+#
+####################################################################################################
+n_samples = 20000 #20000
 
+perplexity = 30.0 #30.0
+n_epochs_nnparam = 2000 #2000
+nnparam_init='pca' #'random'
+
+n_epochs_tsne_mse = 2 2200 #200
+batch_tsne_mse = 40 #40
+
+checkoutEpoch = 20
+####################################################################################################
 csv.field_size_limit(sys.maxsize)
 file = open("/Users/matteo/Downloads/trackgenrestylefvdata.csv")
 reader = csv.reader(file)
@@ -21,7 +38,7 @@ vectors = []
 print("loading data...")
 start = timeit.default_timer()
 j = 0
-n_items = 20000
+n_items = n_samples
 for row in reader:
     if len(vectors) == n_items:
         break
@@ -61,7 +78,7 @@ print("data vectorization: done")
 
 print("training non-parametric tsne ...")
 start = timeit.default_timer()
-tsne = manifold.TSNE(n_components=2, init='random', random_state=0, n_iter=5000, perplexity=30.0)
+tsne = manifold.TSNE(n_components=2, init=nnparam_init, random_state=0, n_iter=n_epochs_nnparam, perplexity=perplexity)
 Y = tsne.fit_transform(vectors)
 print("\tnon-parametric tsne trained in " + str(timeit.default_timer() - start) + " seconds")
 
@@ -91,15 +108,6 @@ print("testing_targets.shape: " + str(testing_targets.shape), end=';  ')
 
 testing_label = np.array([color[(int)(i)] for i in testing_indx])
 training_label = np.array([color[(int)(i)] for i in training_indx])
-
-####################################################################################################
-#
-#                                   PARAMETERS SETTINGS
-#
-####################################################################################################
-batch_size_mse = 40
-nb_epoch_mse = 200
-
 
 ####################################################################################################
 #
@@ -179,7 +187,7 @@ def x2p(X, u=15, tol=1e-4, print_iter=500, max_tries=50, verbose=0):
     return P, beta
 
 
-def compute_joint_probabilities(samples, batch_size=batch_size_mse, d=2, perplexity=30, tol=1e-5, verbose=0):
+def compute_joint_probabilities(samples, batch_size=batch_tsne_mse, d=2, perplexity=perplexity, tol=1e-5, verbose=0):
     v = d - 1
 
     # Initialize some variables
@@ -202,8 +210,14 @@ def compute_joint_probabilities(samples, batch_size=batch_size_mse, d=2, perplex
 
 
 ####################################################################################################
-loss_tst =[]
-acc_tst = []
+directory_name = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+directory_name_draft = "../drafts/" +  directory_name + "mse-nonparam-init" + nnparam_init + "-perpl" + str(perplexity)
+directory_name_output = "../outputs/" +  directory_name + "mse-nonparam_init-" + nnparam_init + "-perpl" + str(perplexity)
+print("creating director ...")
+if not os.path.exists(directory_name_draft):
+    os.makedirs(directory_name_draft)
+if not os.path.exists(directory_name_output):
+    os.makedirs(directory_name_output)
 
 from  keras.callbacks import Callback
 class TestCallback(Callback):
@@ -211,11 +225,9 @@ class TestCallback(Callback):
         self.test_data = test_data
 
     def on_epoch_end(self, epoch, logs={}):
-        x, y = self.test_data
-        loss, acc = self.model.evaluate(x, y, verbose=0)
-        loss_tst.append(loss)
-        acc_tst.append(acc)
-        print('\nTesting loss: {}, acc: {}\n'.format(loss, acc))
+        if epoch%checkoutEpoch==0:
+            filename = directory_name_draft + "/" + str(epoch) + "-loss" + str(logs['loss']) + "-val_loss" + str(logs['val_loss']) + ".h5"
+            mseModel.save_weights(filename)
 
 mseModel = Sequential()
 mseModel.add(Dense(500, activation='relu', input_shape=(vectors.shape[1],)))
@@ -223,32 +235,57 @@ mseModel.add(Dense(500, activation='relu'))
 mseModel.add(Dense(2000, activation='relu'))
 mseModel.add(Dense(2))
 mseModel.compile(optimizer='adam', loss='mse', metrics=['acc'])
+print("saving model ...")
+filename = directory_name_draft +"/"+ str([str(i.output_dim) for i in mseModel.layers]) + ".json"
+model_json = mseModel.to_json()
+with open(filename, "w") as json_file:
+    json_file.write(model_json)
+filename = directory_name_output + "/" + str([str(i.output_dim) for i in mseModel.layers]) + ".json"
+with open(filename, "w") as json_file:
+    json_file.write(model_json)
 
-#for i in range(nb_epoch_mse ):
-mseModel_history = mseModel.fit(training_data, training_targets, nb_epoch=nb_epoch_mse, verbose=1,batch_size=batch_size_mse, shuffle=True, validation_data=(testing_data, testing_targets))# , callbacks=[TestCallback((testing_data, testing_targets))])
- #   loss, acc = mseModel.evaluate(testing_data, testing_targets, verbose=0)
- #   print('\nTesting loss: {}, acc: {}\n'.format(loss, acc))
+print("training parametric tsne -mse -nonparam_targets")
+start = timeit.default_timer()
+mseModel_history = mseModel.fit(training_data, training_targets, nb_epoch=n_epochs_tsne_mse, verbose=1,batch_size=batch_tsne_mse, shuffle=True, validation_data=(testing_data, testing_targets), callbacks=[TestCallback((testing_data, testing_targets))])
+print("\tparametric tsne trained in " + str(timeit.default_timer() - start) + " seconds")
 
+print("predicting parametric tsne ...")
 mseModel_tr = mseModel.predict(training_data)
 mseModel_tst = mseModel.predict(testing_data) # 0.0072
 
 ######################################################################################################
 globalMSE = mseModel.predict(vectors)
 
-Q_tr = compute_joint_probabilities(mseModel_tr, batch_size=mseModel_tr.shape[0], verbose=0, perplexity=30)
+print("calculating probability distribution preservation/conservation bof the data ...")
+Q_tr = compute_joint_probabilities(mseModel_tr, batch_size=mseModel_tr.shape[0], verbose=0, perplexity=30) #param tsne output (training_dataset)
 Q_tr = Q_tr.reshape(Q_tr.shape[0]*Q_tr.shape[1],-1)
-Q_tst = compute_joint_probabilities(mseModel_tst, batch_size=mseModel_tst.shape[0], verbose=0, perplexity=30)
+Q_tst = compute_joint_probabilities(mseModel_tst, batch_size=mseModel_tst.shape[0], verbose=0, perplexity=30) #param tsne output (testing_dataset)
 Q_tst = Q_tst.reshape(Q_tst.shape[0]*Q_tst.shape[1],-1)
-P_nnp_tsne = compute_joint_probabilities(training_targets[:mseModel_tr.shape[0],:], batch_size=mseModel_tr.shape[0], verbose=0, perplexity=30)
-P_nnp_tsne = P_nnp_tsne.reshape(P_nnp_tsne.shape[0]*P_nnp_tsne.shape[1],-1)
-P = compute_joint_probabilities(training_data[:mseModel_tr.shape[0],:], batch_size=mseModel_tr.shape[0], verbose=0, perplexity=30)
-P = P.reshape(P.shape[0]*P.shape[1],-1)
+P_nnp_tsne_tr = compute_joint_probabilities(training_targets[:mseModel_tr.shape[0],:], batch_size=mseModel_tr.shape[0], verbose=0, perplexity=30)  #nnparam tsne output
+P_nnp_tsne_tr = P_nnp_tsne_tr.reshape(P_nnp_tsne_tr.shape[0]*P_nnp_tsne_tr.shape[1],-1)
+P_nnp_tsne_tst = compute_joint_probabilities(testing_targets[:mseModel_tst.shape[0],:], batch_size=mseModel_tst.shape[0], verbose=0, perplexity=30)  #nnparam tsne output
+P_nnp_tsne_tst = P_nnp_tsne_tst.reshape(P_nnp_tsne_tst.shape[0]*P_nnp_tsne_tst.shape[1],-1)
+P_tr = compute_joint_probabilities(training_data[:mseModel_tr.shape[0],:], batch_size=mseModel_tr.shape[0], verbose=0, perplexity=30) #original space
+P_tr = P_tr.reshape(P_tr.shape[0]*P_tr.shape[1],-1)
+P_tst = compute_joint_probabilities(testing_targets[:mseModel_tst.shape[0],:], batch_size=mseModel_tst.shape[0], verbose=0, perplexity=30) #original space
+P_tst = P_tst.reshape(P_tst.shape[0]*P_tst.shape[1],-1)
 
-mseModel_err_target_nppmodel = np.sum(P_nnp_tsne*np.log(P_nnp_tsne/P))
-mseModel_err_tr_target = np.sum(P*np.log(P/Q_tr))
-mseModel_err_tr_nppmodel = np.sum(P_nnp_tsne*np.log(P_nnp_tsne/Q_tr))
+mseModel_err_tr_nnp_data = np.sum(P_nnp_tsne_tr*np.log(P_nnp_tsne_tr/P_tr))
+mseModel_err_tr_out_data = np.sum(P_tr*np.log(P_tr/Q_tr))
+mseModel_err_tr_nnp_out = np.sum(P_nnp_tsne_tr*np.log(P_nnp_tsne_tr/Q_tr))
 
-print("mseModel_err_tr_nppmodel: " + str(mseModel_err_tr_nppmodel) + "; mseModel_err_tr_target: " + str(mseModel_err_tr_target) + "; mseModel_err_target_nppmodel: " + str(mseModel_err_target_nppmodel) )
+mseModel_err_tst_nnp_data = np.sum(P_nnp_tsne_tst*np.log(P_nnp_tsne_tst/P_tst))
+mseModel_err_tst_out_data = np.sum(P_tst*np.log(P_tst/Q_tst))
+mseModel_err_tst_nnp_out = np.sum(P_nnp_tsne_tst*np.log(P_nnp_tsne_tst/Q_tst))
+print("training evaluation:")
+print("1) non parametric output and original data(34-Dimensions): " + str(mseModel_err_tr_nnp_data))
+print("2) parametric tsne output and original data(34-Dimensions): " + str(mseModel_err_tr_out_data))
+print("3) non parametric output and : original data(34-Dimensions)" + str(mseModel_err_tr_nnp_out))
+print("testing evaluation:")
+print("1) non parametric output and original data(34-Dimensions): " + str(mseModel_err_tst_nnp_data))
+print("2) parametric tsne output and original data(34-Dimensions): " + str(mseModel_err_tst_out_data))
+print("3) non parametric output and : original data(34-Dimensions)" + str(mseModel_err_tst_nnp_out))
+
 print("training loss: " + str(mseModel_history.history['loss'][len(mseModel_history.history['loss'])-1]) + "; training acc: " + str(mseModel_history.history['acc'][len(mseModel_history.history['acc'])-1]) +
       "; testing loss: " + str(mseModel_history.history['val_loss'][len(mseModel_history.history['val_loss'])-1]) + "; testing acc: " + str(mseModel_history.history['val_acc'][len(mseModel_history.history['val_acc'])-1]) )
 ######################################################################################################
@@ -261,18 +298,18 @@ def onpick(event):
     for i in ind:
         print("artist: " + data[i][1] + " song:" + data[i][2])
 
-
+print("plotting ...")
 fig = plt.figure()
 fig.canvas.mpl_connect('pick_event', onpick)
 gs = gridspec.GridSpec(5, 2)
 
 ax1 = fig.add_subplot(gs[0,0])
-ax1.scatter(Y[:, 0], Y[:, 1], c=color, s = 8, picker=True)
+ax1.scatter(Y[:, 0], Y[:, 1], c=color, s = 6, picker=True)
 ax1.set_title("non parametric TSNE")
 
 ax2 = fig.add_subplot(gs[0,1])
-ax2.scatter(mseModel_tr[:, 0], mseModel_tr[:, 1],s = 8, c=training_label)
-ax2.scatter(mseModel_tst[:, 0], mseModel_tst[:, 1],s = 8, c=testing_label, marker='^')
+ax2.scatter(mseModel_tr[:, 0], mseModel_tr[:, 1],s = 6, c=training_label)
+ax2.scatter(mseModel_tst[:, 0], mseModel_tst[:, 1],s = 6, c=testing_label, marker='^')
 ax2.set_title("TSNE_ as TARGET MSE")
 
 ax4 = fig.add_subplot(gs[1,:])
@@ -285,17 +322,43 @@ ax5.set_title("trainin_acc")
 
 
 ax6 = fig.add_subplot(gs[3,:])
-ax6.plot(loss_tst)
+ax6.plot(mseModel_history.history['val_loss'])
 ax6.set_title("testing loss")
 
 
 ax7 = fig.add_subplot(gs[4,:])
-ax7.plot(acc_tst)
+ax7.plot(mseModel_history.history['val_acc'])
 ax7.set_title("testing_acc")
+
 
 fig2 = plt.figure()
 fig2.canvas.mpl_connect('pick_event', onpick)
 ax21 = fig2.add_subplot(1,1,1)
 ax21.scatter(globalMSE[:, 0], globalMSE[:, 1],s = 8, c=color,picker=True)
 ax21.set_title("dataset prediction")
+
+
+print("saving files ...")
+filename = directory_name_output + "/" + str(n_epochs_tsne_mse) + "-loss" + str(mseModel_history.history['loss'][len(mseModel_history.history['loss'])-1]) + "-val_loss" + str(mseModel_history.history['val_loss'][len(mseModel_history.history['val_loss'])-1]) + ".h5"
+mseModel.save_weights(filename)
+filename = directory_name_output +"/"+ str([str(i.output_dim) for i in mseModel.layers]) + ".json"
+model_json = mseModel.to_json()
+filename = directory_name_output +"/summary.txt"
+file = open(filename, 'w')
+file.write("training evaluation:")
+file.write("\n1) non parametric output and original data(34-Dimensions): " + str(mseModel_err_tr_nnp_data))
+file.write("\n2) parametric tsne output and original data(34-Dimensions): " + str(mseModel_err_tr_out_data))
+file.write("\n3) non parametric output and : original data(34-Dimensions)" + str(mseModel_err_tr_nnp_out))
+file.write("\ntesting evaluation:")
+file.write("\n1) non parametric output and original data(34-Dimensions): " + str(mseModel_err_tst_nnp_data))
+file.write("\n2) parametric tsne output and original data(34-Dimensions): " + str(mseModel_err_tst_out_data))
+file.write("\n 3) non parametric output and : original data(34-Dimensions)" + str(mseModel_err_tst_nnp_out))
+file.write("\ntraining loss: " + str(mseModel_history.history['loss'][len(mseModel_history.history['loss'])-1]) + ";\ntraining acc: " + str(mseModel_history.history['acc'][len(mseModel_history.history['acc'])-1]) +
+      ";\ntesting loss: " + str(mseModel_history.history['val_loss'][len(mseModel_history.history['val_loss'])-1]) + ";\ntesting acc: " + str(mseModel_history.history['val_acc'][len(mseModel_history.history['val_acc'])-1]) )
+file.close()
+filename = directory_name_output +"/"+ str([str(i.output_dim) for i in mseModel.layers]) + "overall.png"
+fig.savefig(filename)
+filename = directory_name_output +"/"+ str([str(i.output_dim) for i in mseModel.layers]) + "predictions.png"
+fig2.savefig(filename)
+
 plt.show()
