@@ -13,22 +13,23 @@ import sys
 import re
 import datetime
 import os
+import time
 
 ####################################################################################################
 #
 #                                   PARAMETERS SETTINGS
 #
 ####################################################################################################
-n_samples = 20000 #20000
+n_samples = 1000 #20000
 
 perplexity = 30.0 #30.0
-n_epochs_nnparam = 2000 #2000
+n_epochs_nnparam = 200 #2000
 nnparam_init='pca' #'random'
 
-n_epochs_tsne_mse = 2 2200 #200
+n_epochs_tsne_mse = 10 #200
 batch_tsne_mse = 40 #40
 
-checkoutEpoch = 20
+checkoutEpoch = 2
 ####################################################################################################
 csv.field_size_limit(sys.maxsize)
 file = open("/Users/matteo/Downloads/trackgenrestylefvdata.csv")
@@ -210,9 +211,10 @@ def compute_joint_probabilities(samples, batch_size=batch_tsne_mse, d=2, perplex
 
 
 ####################################################################################################
-directory_name = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-directory_name_draft = "../drafts/" +  directory_name + "mse-nonparam-init" + nnparam_init + "-perpl" + str(perplexity)
-directory_name_output = "../outputs/" +  directory_name + "mse-nonparam_init-" + nnparam_init + "-perpl" + str(perplexity)
+directory_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+directory_name =  directory_name + "mse-nonparam" + nnparam_init + "-perpl" + str(perplexity) + "-nnpepochs" + str(n_epochs_nnparam) + "-batch" + str(batch_tsne_mse) + "-epochs" + str(n_epochs_tsne_mse)
+directory_name_draft = "../drafts/" + directory_name
+directory_name_output = "../outputs/" + directory_name
 print("creating director ...")
 if not os.path.exists(directory_name_draft):
     os.makedirs(directory_name_draft)
@@ -339,6 +341,7 @@ ax21.set_title("dataset prediction")
 
 
 print("saving files ...")
+
 filename = directory_name_output + "/" + str(n_epochs_tsne_mse) + "-loss" + str(mseModel_history.history['loss'][len(mseModel_history.history['loss'])-1]) + "-val_loss" + str(mseModel_history.history['val_loss'][len(mseModel_history.history['val_loss'])-1]) + ".h5"
 mseModel.save_weights(filename)
 filename = directory_name_output +"/"+ str([str(i.output_dim) for i in mseModel.layers]) + ".json"
@@ -355,10 +358,12 @@ file.write("\n2) parametric tsne output and original data(34-Dimensions): " + st
 file.write("\n 3) non parametric output and : original data(34-Dimensions)" + str(mseModel_err_tst_nnp_out))
 file.write("\ntraining loss: " + str(mseModel_history.history['loss'][len(mseModel_history.history['loss'])-1]) + ";\ntraining acc: " + str(mseModel_history.history['acc'][len(mseModel_history.history['acc'])-1]) +
       ";\ntesting loss: " + str(mseModel_history.history['val_loss'][len(mseModel_history.history['val_loss'])-1]) + ";\ntesting acc: " + str(mseModel_history.history['val_acc'][len(mseModel_history.history['val_acc'])-1]) )
+file.write('\n' + str(mseModel.get_config()))
 file.close()
-filename = directory_name_output +"/"+ str([str(i.output_dim) for i in mseModel.layers]) + "overall.png"
+filename = directory_name_output +"/" + "overall.png"
 fig.savefig(filename)
-filename = directory_name_output +"/"+ str([str(i.output_dim) for i in mseModel.layers]) + "predictions.png"
+filename = directory_name_output +"/" + "predictions.png"
 fig2.savefig(filename)
+
 
 plt.show()
