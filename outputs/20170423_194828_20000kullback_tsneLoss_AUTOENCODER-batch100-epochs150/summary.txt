@@ -1,0 +1,17 @@
+number of samples: 20000
+tsne nonparam init: pca -perpl: 30.0 -nnpepochs: 2000
+batch100
+epochs150
+ae epochs: 30ae batch20
+
+training evaluation:
+1) non parametric output and original data(34-Dimensions): 6.77074678529
+2) parametric tsne output and original data(34-Dimensions): 10.8419183526
+3) non parametric output and : original data(34-Dimensions)11.3146600843
+testing evaluation:
+1) non parametric output and original data(34-Dimensions): 6.90533966722
+2) parametric tsne output and original data(34-Dimensions): 10.9071082721
+ 3) non parametric output and : original data(34-Dimensions)11.4785388617
+training loss: 0.299917845577
+testing loss: 0.3219157063
+[{'class_name': 'Dense', 'config': {'name': 'dense_9', 'trainable': True, 'batch_input_shape': (None, 34), 'input_dtype': 'float32', 'output_dim': 500, 'init': 'glorot_uniform', 'activation': 'relu', 'W_regularizer': None, 'b_regularizer': None, 'activity_regularizer': None, 'W_constraint': None, 'b_constraint': None, 'bias': True, 'input_dim': 34}}, {'class_name': 'Dense', 'config': {'name': 'dense_10', 'trainable': True, 'output_dim': 500, 'init': 'glorot_uniform', 'activation': 'relu', 'W_regularizer': None, 'b_regularizer': None, 'activity_regularizer': None, 'W_constraint': None, 'b_constraint': None, 'bias': True, 'input_dim': 500}}, {'class_name': 'Dense', 'config': {'name': 'dense_11', 'trainable': True, 'output_dim': 2000, 'init': 'glorot_uniform', 'activation': 'relu', 'W_regularizer': None, 'b_regularizer': None, 'activity_regularizer': None, 'W_constraint': None, 'b_constraint': None, 'bias': True, 'input_dim': 500}}, {'class_name': 'Dense', 'config': {'name': 'dense_12', 'trainable': True, 'output_dim': 2, 'init': 'glorot_uniform', 'activation': 'linear', 'W_regularizer': None, 'b_regularizer': None, 'activity_regularizer': None, 'W_constraint': None, 'b_constraint': None, 'bias': True, 'input_dim': 2000}}]

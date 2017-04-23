@@ -20,16 +20,16 @@ import time
 #                                   PARAMETERS SETTINGS
 #
 ####################################################################################################
-n_samples = 1000 #20000
+n_samples = 20000 #20000
 
 perplexity = 30.0 #30.0
-n_epochs_nnparam = 200 #2000
-nnparam_init='pca' #'random'
+n_epochs_nnparam = 2000 #2000
+nnparam_init='pca' #'pca'
 
-n_epochs_tsne_mse = 10 #200
-batch_tsne_mse = 40 #40
+n_epochs_tsne_mse = 150 #200
+batch_tsne_mse = 60 #40
 
-checkoutEpoch = 2
+checkoutEpoch = 20
 ####################################################################################################
 csv.field_size_limit(sys.maxsize)
 file = open("/Users/matteo/Downloads/trackgenrestylefvdata.csv")
@@ -212,7 +212,7 @@ def compute_joint_probabilities(samples, batch_size=batch_tsne_mse, d=2, perplex
 
 ####################################################################################################
 directory_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-directory_name =  directory_name + "mse-nonparam" + nnparam_init + "-perpl" + str(perplexity) + "-nnpepochs" + str(n_epochs_nnparam) + "-batch" + str(batch_tsne_mse) + "-epochs" + str(n_epochs_tsne_mse)
+directory_name =  directory_name + "_" + str(n_samples) + "mse-nonparam" + nnparam_init + "-perpl" + str(perplexity) + "-nnpepochs" + str(n_epochs_nnparam) + "-batch" + str(batch_tsne_mse) + "-epochs" + str(n_epochs_tsne_mse)
 directory_name_draft = "../drafts/" + directory_name
 directory_name_output = "../outputs/" + directory_name
 print("creating director ...")
@@ -344,11 +344,10 @@ print("saving files ...")
 
 filename = directory_name_output + "/" + str(n_epochs_tsne_mse) + "-loss" + str(mseModel_history.history['loss'][len(mseModel_history.history['loss'])-1]) + "-val_loss" + str(mseModel_history.history['val_loss'][len(mseModel_history.history['val_loss'])-1]) + ".h5"
 mseModel.save_weights(filename)
-filename = directory_name_output +"/"+ str([str(i.output_dim) for i in mseModel.layers]) + ".json"
-model_json = mseModel.to_json()
 filename = directory_name_output +"/summary.txt"
 file = open(filename, 'w')
-file.write("training evaluation:")
+file.write("number of samples: " + str(n_samples) + "\nmse nonparam init: " + nnparam_init + " -perpl: " + str(perplexity) + " -nnpepochs: " + str(n_epochs_nnparam) + "\nbatch" + str(batch_tsne_mse) + "\nepochs" + str(n_epochs_tsne_mse))
+file.write("\n\ntraining evaluation:")
 file.write("\n1) non parametric output and original data(34-Dimensions): " + str(mseModel_err_tr_nnp_data))
 file.write("\n2) parametric tsne output and original data(34-Dimensions): " + str(mseModel_err_tr_out_data))
 file.write("\n3) non parametric output and : original data(34-Dimensions)" + str(mseModel_err_tr_nnp_out))

@@ -11,6 +11,32 @@ from keras.optimizers import SGD, RMSprop
 import csv
 import sys
 import re
+import datetime
+import os
+import time
+
+
+####################################################################################################
+#
+#                                   PARAMETERS SETTINGS
+#
+####################################################################################################
+n_samples = 20000 #20000
+batch_tsne_kullback = 100
+nb_epoch_tsne_kullback = 150
+
+
+perplexity = 30.0 #30.0
+n_epochs_nnparam = 2000 #2000
+nnparam_init='pca' #'pca'
+
+
+checkoutEpoch = 15
+
+rbm_epochs = 10
+rbm_batch = 20
+
+####################################################################################################
 
 csv.field_size_limit(sys.maxsize)
 file = open("/Users/matteo/Downloads/trackgenrestylefvdata.csv")
@@ -20,7 +46,7 @@ vectors = []
 print("loading data...")
 start = timeit.default_timer()
 j = 0
-n_items = 3000
+n_items = n_samples
 for row in reader:
     if len(vectors) == n_items:
         break
@@ -60,7 +86,7 @@ print("data vectorization: done")
 
 print("training non-parametric tsne ...")
 start = timeit.default_timer()
-tsne = manifold.TSNE(n_components=2, init='pca', random_state=0, n_iter=200, perplexity=30.0) #epoch to change to 5000
+tsne = manifold.TSNE(n_components=2, init=nnparam_init, random_state=0, n_iter=n_epochs_nnparam, perplexity=perplexity) #epoch to change to 5000
 Y = tsne.fit_transform(vectors)
 
 print("\tnon-parametric tsne trained in " + str(timeit.default_timer() - start) + " seconds")
@@ -92,16 +118,12 @@ print("testing_targets.shape: " + str(testing_targets.shape), end=';  ')
 testing_label = np.array([color[(int)(i)] for i in testing_indx])
 training_label = np.array([color[(int)(i)] for i in training_indx])
 
-####################################################################################################
-#
-#                                   PARAMETERS SETTINGS
-#
-####################################################################################################
-batch_size_tsne = 200
-nb_epoch_tsne = 150
 
 ####################################################################################################
-
+#
+#                                   JOINT PROBABILITY
+#
+####################################################################################################
 
 def Hbeta(D, beta):
     P = np.exp(-D * beta)
@@ -175,7 +197,7 @@ def x2p(X, u=15, tol=1e-4, print_iter=500, max_tries=50, verbose=0):
     return P, beta
 
 
-def compute_joint_probabilities(samples, batch_size=batch_size_tsne, d=2, perplexity=30, tol=1e-5, verbose=0):
+def compute_joint_probabilities(samples, batch_size=batch_tsne_kullback, d=2, perplexity=perplexity, tol=1e-5, verbose=0):
     v = d - 1
 
     # Initialize some variables
@@ -203,7 +225,7 @@ from keras import backend as K
 def tsne(P, activations):
     # d = K.shape(activations)[1]
     d = 2  # TODO: should set this automatically, but the above is very slow for some reason
-    n = batch_size_tsne  # TODO: should set this automatically
+    n = batch_tsne_kullback  # TODO: should set this automatically
     v = d - 1.
     eps = K.variable(10e-15)  # needs to be at least 10e-8 to get anything after Q /= K.sum(Q)  ORIGINAL : eps = K.variable(10e-15)
     sum_act = K.sum(K.square(activations), axis=1)
@@ -220,9 +242,6 @@ def tsne(P, activations):
 
 ####################################################################################################
 
-
-####################################################################################################
-
 # training rbm
 start = timeit.default_timer()
 
@@ -232,7 +251,7 @@ W = [None] * len(H)
 bias_upW = [None] * len(H)
 bias_downW = [None] * len(H)
 eta = 0.1
-max_iter = 20
+max_iter = rbm_epochs
 weight_cost = 0.0002
 
 initial_momentum = 0.5
@@ -241,7 +260,7 @@ final_momentum = 0.9
 input_tmp = np.array(training_data)
 input_tmp= input_tmp/np.amax(input_tmp)
 
-batch_size = 40
+batch_size = rbm_batch
 for i in range(len(H)):
     print("autoencoding layer: " + str(i))
     # if i !=len(H):
@@ -285,7 +304,7 @@ for i in range(len(H)):
 
 print("\tpretraining computed in " + str(timeit.default_timer() - start) + " seconds")
 
-print("Weigths shapes: " + str(W[0].shape) + " " + str(bias_upW[0].shape) + "; " + str(W[1].shape) + " " + str(
+print("Weights shapes: " + str(W[0].shape) + " " + str(bias_upW[0].shape) + "; " + str(W[1].shape) + " " + str(
     bias_upW[1].shape) + "; " + str(W[2].shape) + " " + str(bias_upW[2].shape) + "; " + str(W[3].shape) + " " + str(
     bias_upW[3].shape))
 
@@ -296,9 +315,18 @@ for i in range(len(H)):
 
 
 #########################################################################################################
+directory_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+directory_name =  directory_name + "_" + str(n_samples) + "kullback_tsneLoss_RBM" + "-batch" + str(batch_tsne_kullback) + "-epochs" + str(nb_epoch_tsne_kullback)
+directory_name_draft = "../drafts/" + directory_name
+directory_name_output = "../outputs/" + directory_name
+print("creating director ...")
+if not os.path.exists(directory_name_draft):
+    os.makedirs(directory_name_draft)
+if not os.path.exists(directory_name_output):
+    os.makedirs(directory_name_output)
 
-P = compute_joint_probabilities(training_data, batch_size=batch_size_tsne, verbose=0, perplexity=30)
-P_val = compute_joint_probabilities(testing_data, batch_size=batch_size_tsne, verbose=0, perplexity=30)
+P = compute_joint_probabilities(training_data, batch_size=batch_tsne_kullback, verbose=0, perplexity=perplexity)
+P_val = compute_joint_probabilities(testing_data, batch_size=batch_tsne_kullback, verbose=0, perplexity=perplexity)
 
 
 Y_train_tsne = P.reshape(P.shape[0] * P.shape[1], -1)
@@ -315,8 +343,9 @@ class TestCallback(Callback):
         self.test_data = test_data
 
     def on_epoch_end(self, epoch, logs={}):
-        a=1
-
+        if epoch%checkoutEpoch==0:
+            filename = directory_name_draft + "/" + str(epoch) + "-loss" + str(logs['loss']) + "-val_loss" + str(logs['val_loss']) + ".h5"
+            tsneModel.save_weights(filename)
 
 tsneModel = Sequential()
 tsneModel.add(Dense(500, activation='relu', weights=pretrained_weights[0], input_shape=(vectors.shape[1],)))
@@ -325,28 +354,60 @@ tsneModel.add(Dense(2000, activation='relu', weights=pretrained_weights[2]))
 tsneModel.add(Dense(2, weights=pretrained_weights[3]))
 
 tsneModel.compile(optimizer='adam', loss=tsne, metrics=['acc'])
-tsneModel_history = tsneModel.fit(training_data_tsne/np.amax(training_data_tsne), Y_train_tsne, nb_epoch=nb_epoch_tsne, verbose=1, batch_size=batch_size_tsne, shuffle=False, validation_data=(val_data_tsne/np.amax(val_data_tsne), Y_val_tsne))#, callbacks=[TestCallback((val_data_tsne, Y_val_tsne))])
+print("saving model ...")
+filename = directory_name_draft + "/" + str([str(i.output_dim) for i in tsneModel.layers]) + ".json"
+model_json = tsneModel.to_json()
+with open(filename, "w") as json_file:
+    json_file.write(model_json)
+filename = directory_name_output + "/" + str([str(i.output_dim) for i in tsneModel.layers]) + ".json"
+with open(filename, "w") as json_file:
+    json_file.write(model_json)
+
+print("training parametric tsne -kullback with probability preservation")
+start = timeit.default_timer()
+tsneModel_history = tsneModel.fit(training_data_tsne/np.amax(training_data_tsne), Y_train_tsne, nb_epoch=nb_epoch_tsne_kullback, verbose=1, batch_size=batch_tsne_kullback, shuffle=False, validation_data=(val_data_tsne/np.amax(val_data_tsne), Y_val_tsne), callbacks=[TestCallback((val_data_tsne, Y_val_tsne))])
+print("\tparametric tsne trained in " + str(timeit.default_timer() - start) + " seconds")
+
+print("predicting parametric tsne ...")
 tsneModel_tr = tsneModel.predict(training_data_tsne/np.amax(training_data_tsne))
 tsneModel_tst = tsneModel.predict(testing_data/np.amax(testing_data)) # 0.31
+######################################################################################################
+globalKullback = tsneModel.predict(vectors)
 
-Q_tr = compute_joint_probabilities(tsneModel_tr, batch_size=tsneModel_tr.shape[0], verbose=0, perplexity=30)
+print("calculating probability distribution preservation/conservation bof the data ...")
+Q_tr = compute_joint_probabilities(tsneModel_tr, batch_size=tsneModel_tr.shape[0], verbose=0, perplexity=perplexity) #param tsne output (training_dataset)
 Q_tr = Q_tr.reshape(Q_tr.shape[0]*Q_tr.shape[1],-1)
-Q_tst = compute_joint_probabilities(tsneModel_tst, batch_size=tsneModel_tst.shape[0], verbose=0, perplexity=30)
+Q_tst = compute_joint_probabilities(tsneModel_tst, batch_size=tsneModel_tst.shape[0], verbose=0, perplexity=perplexity) #param tsne output (testing_dataset)
 Q_tst = Q_tst.reshape(Q_tst.shape[0]*Q_tst.shape[1],-1)
-P_nnp_tsne = compute_joint_probabilities(training_targets[:tsneModel_tr.shape[0],:], batch_size=tsneModel_tr.shape[0], verbose=0, perplexity=30)
-P_nnp_tsne = P_nnp_tsne.reshape(P_nnp_tsne.shape[0]*P_nnp_tsne.shape[1],-1)
-P = compute_joint_probabilities(training_data[:tsneModel_tr.shape[0],:], batch_size=tsneModel_tr.shape[0], verbose=0, perplexity=30)
-P = P.reshape(P.shape[0]*P.shape[1],-1)
-
-tsneModel_err_target_nppmodel = np.sum(P_nnp_tsne*np.log(P_nnp_tsne/P))
-tsneModel_err_tr_target = np.sum(P*np.log(P/Q_tr))
-tsneModel_err_tr_nppmodel = np.sum(P_nnp_tsne*np.log(P_nnp_tsne/Q_tr))
-
-print("tsneModel_err_target_nppmodel: " + str(tsneModel_err_target_nppmodel) + "; tsneModel_err_tr_target: " + str(tsneModel_err_tr_target) + "; tsneModel_err_tr_nppmodel: " + str(tsneModel_err_tr_nppmodel) )
-print("training loss: " + str(tsneModel_history.history['loss'][len(tsneModel_history.history['loss'])-1]) + "; training acc: " + str(tsneModel_history.history['acc'][len(tsneModel_history.history['acc'])-1]) )
-print("testing loss: " + str(tsneModel_history.history['val_loss'][len(tsneModel_history.history['val_loss'])-1]) + "; testing acc: " + str(tsneModel_history.history['val_acc'][len(tsneModel_history.history['val_acc'])-1]) )
+P_nnp_tsne_tr = compute_joint_probabilities(training_targets[:tsneModel_tr.shape[0],:], batch_size=tsneModel_tr.shape[0], verbose=0, perplexity=perplexity) #nnparam tsne output
+P_nnp_tsne_tr = P_nnp_tsne_tr.reshape(P_nnp_tsne_tr.shape[0]*P_nnp_tsne_tr.shape[1],-1)
+P_nnp_tsne_tst = compute_joint_probabilities(testing_targets[:tsneModel_tst.shape[0],:], batch_size=tsneModel_tst.shape[0], verbose=0, perplexity=perplexity)  #nnparam tsne output
+P_nnp_tsne_tst = P_nnp_tsne_tst.reshape(P_nnp_tsne_tst.shape[0]*P_nnp_tsne_tst.shape[1],-1)
+P_tr = compute_joint_probabilities(training_data[:tsneModel_tr.shape[0],:], batch_size=tsneModel_tr.shape[0], verbose=0, perplexity=perplexity) #original space
+P_tr = P_tr.reshape(P_tr.shape[0]*P_tr.shape[1],-1)
+P_tst = compute_joint_probabilities(testing_data[:tsneModel_tst.shape[0],:], batch_size=tsneModel_tst.shape[0], verbose=0, perplexity=perplexity) #original space
+P_tst = P_tst.reshape(P_tst.shape[0]*P_tst.shape[1],-1)
 
 
+tsneModel_err_tr_nnp_data = np.sum(P_nnp_tsne_tr*np.log(P_nnp_tsne_tr/P_tr))
+tsneModel_err_tr_out_data = np.sum(P_tr*np.log(P_tr/Q_tr))
+tsneModel_err_tr_nnp_out = np.sum(P_nnp_tsne_tr*np.log(P_nnp_tsne_tr/Q_tr))
+
+tsneModel_err_tst_nnp_data = np.sum(P_nnp_tsne_tst*np.log(P_nnp_tsne_tst/P_tst))
+tsneModel_err_tst_out_data = np.sum(P_tst*np.log(P_tst/Q_tst))
+tsneModel_err_tst_nnp_out = np.sum(P_nnp_tsne_tst*np.log(P_nnp_tsne_tst/Q_tst))
+print("training evaluation:")
+print("1) non parametric output and original data(34-Dimensions): " + str(tsneModel_err_tr_nnp_data))
+print("2) parametric tsne output and original data(34-Dimensions): " + str(tsneModel_err_tr_out_data))
+print("3) non parametric output and : original data(34-Dimensions)" + str(tsneModel_err_tr_nnp_out))
+print("testing evaluation:")
+print("1) non parametric output and original data(34-Dimensions): " + str(tsneModel_err_tst_nnp_data))
+print("2) parametric tsne output and original data(34-Dimensions): " + str(tsneModel_err_tst_out_data))
+print("3) non parametric output and : original data(34-Dimensions)" + str(tsneModel_err_tst_nnp_out))
+
+print("training loss: " + str(tsneModel_history.history['loss'][len(tsneModel_history.history['loss'])-1]))
+print("testing loss: " + str(tsneModel_history.history['val_loss'][len(tsneModel_history.history['val_loss'])-1]))
+######################################################################################################
 
 # PURE RBM
 print("Creating a model for RBM...")
@@ -363,6 +424,8 @@ encoder_RBM_tst = model_RBM.predict(testing_data)
 
 
 ######################################################################################################
+globalMSE = tsneModel.predict(vectors/np.amax(vectors))
+
 from matplotlib import gridspec
 
 
@@ -372,23 +435,23 @@ def onpick(event):
         print("artist: " + data[i][1] + " song:" + data[i][2])
 
 
-
+print("plotting ...")
 fig = plt.figure()
 fig.canvas.mpl_connect('pick_event', onpick)
 gs = gridspec.GridSpec(3, 3)
 
 ax1 = fig.add_subplot(gs[0,0])
-ax1.scatter(Y[:, 0], Y[:, 1], c=color, s = 8, picker=True)
+ax1.scatter(Y[:, 0], Y[:, 1], c=color, s = 6, picker=True)
 ax1.set_title("non parametric TSNE")
 
 ax2 = fig.add_subplot(gs[0,1])
-ax2.scatter(tsneModel_tr[:, 0], tsneModel_tr[:, 1], s = 8, c=training_label[:tsneModel_tr.shape[0]])
-ax2.scatter(tsneModel_tst[:, 0], tsneModel_tst[:, 1], s = 8, c=testing_label[:tsneModel_tst.shape[0]], marker='^')
+ax2.scatter(tsneModel_tr[:, 0], tsneModel_tr[:, 1], s = 6, c=training_label[:tsneModel_tr.shape[0]])
+ax2.scatter(tsneModel_tst[:, 0], tsneModel_tst[:, 1], s = 6, c=testing_label[:tsneModel_tst.shape[0]], marker='^')
 ax2.set_title("TSNE_ as LOSS")
 
 axx = fig.add_subplot(gs[0,2])
-axx.scatter(encoder_RBM_tr[:, 0], encoder_RBM_tr[:, 1], s = 8, c=training_label[:encoder_RBM_tr.shape[0]])
-axx.scatter(encoder_RBM_tst[:, 0], encoder_RBM_tst[:, 1], s = 8, c=testing_label[:encoder_RBM_tst.shape[0]], marker='^')
+axx.scatter(encoder_RBM_tr[:, 0], encoder_RBM_tr[:, 1], s = 6, c=training_label[:encoder_RBM_tr.shape[0]])
+axx.scatter(encoder_RBM_tst[:, 0], encoder_RBM_tst[:, 1], s = 6, c=testing_label[:encoder_RBM_tst.shape[0]], marker='^')
 axx.set_title("RBM")
 
 ax4 = fig.add_subplot(gs[1,:])
@@ -403,8 +466,33 @@ ax6.set_title("testing loss")
 
 fig2 = plt.figure()
 fig2.canvas.mpl_connect('pick_event', onpick)
-globalMSE = tsneModel.predict(vectors/np.amax(vectors))
 ax21 = fig2.add_subplot(1,1,1)
 ax21.scatter(globalMSE[:, 0], globalMSE[:, 1],s = 8, c=color,picker=True)
 ax21.set_title("dataset prediction")
+
+print("saving files ...")
+
+filename = directory_name_output + "/" + str(nb_epoch_tsne_kullback) + "-loss" + str(tsneModel_history.history['loss'][len(tsneModel_history.history['loss'])-1]) + "-val_loss" + str(tsneModel_history.history['val_loss'][len(tsneModel_history.history['val_loss'])-1]) + ".h5"
+tsneModel.save_weights(filename)
+filename = directory_name_output +"/summary.txt"
+file = open(filename, 'w')
+file.write("number of samples: " + str(n_samples) + "\ntsne nonparam init: " + nnparam_init + " -perpl: " + str(perplexity) + " -nnpepochs: " + str(n_epochs_nnparam) + "\nbatch" + str(batch_tsne_kullback) + "\nepochs" + str(nb_epoch_tsne_kullback))
+file.write("\nrbm epochs: " + str(rbm_epochs) + "rbm batch" + str(rbm_batch))
+file.write("\ntraining evaluation:")
+file.write("\n1) non parametric output and original data(34-Dimensions): " + str(tsneModel_err_tr_nnp_data))
+file.write("\n2) parametric tsne output and original data(34-Dimensions): " + str(tsneModel_err_tr_out_data))
+file.write("\n3) non parametric output and : original data(34-Dimensions)" + str(tsneModel_err_tr_nnp_out))
+file.write("\ntesting evaluation:")
+file.write("\n1) non parametric output and original data(34-Dimensions): " + str(tsneModel_err_tst_nnp_data))
+file.write("\n2) parametric tsne output and original data(34-Dimensions): " + str(tsneModel_err_tst_out_data))
+file.write("\n 3) non parametric output and : original data(34-Dimensions)" + str(tsneModel_err_tst_nnp_out))
+file.write("\ntraining loss: " + str(tsneModel_history.history['loss'][len(tsneModel_history.history['loss'])-1]))  #  + ";\ntraining acc: " + str(tsneModel_history.history['acc'][len(tsneModel_history.history['acc'])-1]) +
+file.write("\ntesting loss: " + str(tsneModel_history.history['val_loss'][len(tsneModel_history.history['val_loss'])-1]))   #  + ";\ntesting acc: " + str(tsneModel_history.history['val_acc'][len(tsneModel_history.history['val_acc'])-1]) )
+file.write('\n' + str(tsneModel.get_config()))
+file.close()
+filename = directory_name_output +"/" + "overall.png"
+fig.savefig(filename)
+filename = directory_name_output +"/" + "predictions.png"
+fig2.savefig(filename)
+
 plt.show()
