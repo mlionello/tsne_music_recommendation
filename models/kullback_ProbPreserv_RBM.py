@@ -14,7 +14,9 @@ import re
 import datetime
 import os
 import time
-
+from keras.layers.normalization import BatchNormalization
+from keras.layers import Dropout
+from generate_json import generate_json
 
 ####################################################################################################
 #
@@ -29,7 +31,7 @@ nb_epoch_tsne_kullback = 150
 perplexity = 30.0 #30.0
 n_epochs_nnparam = 2000 #2000
 nnparam_init='pca' #'pca'
-
+dropout= 0.25
 
 checkoutEpoch = 15
 
@@ -349,17 +351,19 @@ class TestCallback(Callback):
 
 tsneModel = Sequential()
 tsneModel.add(Dense(500, activation='relu', weights=pretrained_weights[0], input_shape=(vectors.shape[1],)))
+tsneModel.add(BatchNormalization())
 tsneModel.add(Dense(500, activation='relu',weights=pretrained_weights[1]))
 tsneModel.add(Dense(2000, activation='relu', weights=pretrained_weights[2]))
+tsneModel.add(Dropout(dropout))
 tsneModel.add(Dense(2, weights=pretrained_weights[3]))
 
 tsneModel.compile(optimizer='adam', loss=tsne, metrics=['acc'])
 print("saving model ...")
-filename = directory_name_draft + "/" + str([str(i.output_dim) for i in tsneModel.layers]) + ".json"
+filename = directory_name_draft + "/model.json"
 model_json = tsneModel.to_json()
 with open(filename, "w") as json_file:
     json_file.write(model_json)
-filename = directory_name_output + "/" + str([str(i.output_dim) for i in tsneModel.layers]) + ".json"
+filename = directory_name_output + "/model.json"
 with open(filename, "w") as json_file:
     json_file.write(model_json)
 
@@ -424,7 +428,7 @@ encoder_RBM_tst = model_RBM.predict(testing_data)
 
 
 ######################################################################################################
-globalMSE = tsneModel.predict(vectors/np.amax(vectors))
+globalKullback = tsneModel.predict(vectors/np.amax(vectors))
 
 from matplotlib import gridspec
 
@@ -467,10 +471,12 @@ ax6.set_title("testing loss")
 fig2 = plt.figure()
 fig2.canvas.mpl_connect('pick_event', onpick)
 ax21 = fig2.add_subplot(1,1,1)
-ax21.scatter(globalMSE[:, 0], globalMSE[:, 1],s = 8, c=color,picker=True)
+ax21.scatter(globalKullback[:, 0], globalKullback[:, 1],s = 8, c=color,picker=True)
 ax21.set_title("dataset prediction")
 
 print("saving files ...")
+generate_json(n_samples,data,vectors,globalKullback,directory_name_output + "/dataset.json")
+
 
 filename = directory_name_output + "/" + str(nb_epoch_tsne_kullback) + "-loss" + str(tsneModel_history.history['loss'][len(tsneModel_history.history['loss'])-1]) + "-val_loss" + str(tsneModel_history.history['val_loss'][len(tsneModel_history.history['val_loss'])-1]) + ".h5"
 tsneModel.save_weights(filename)

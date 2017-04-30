@@ -14,6 +14,10 @@ import re
 import datetime
 import os
 import time
+from keras.layers.normalization import BatchNormalization
+from keras.layers import Dropout
+from generate_json import generate_json
+
 
 ####################################################################################################
 #
@@ -26,8 +30,9 @@ perplexity = 30.0 #30.0
 n_epochs_nnparam = 2000 #2000
 nnparam_init='pca' #'pca'
 
-n_epochs_tsne_mse = 150 #200
-batch_tsne_mse = 60 #40
+n_epochs_tsne_mse = 200 #200
+batch_tsne_mse = 40 #40
+dropout = 0.25
 
 checkoutEpoch = 20
 ####################################################################################################
@@ -233,16 +238,18 @@ class TestCallback(Callback):
 
 mseModel = Sequential()
 mseModel.add(Dense(500, activation='relu', input_shape=(vectors.shape[1],)))
+mseModel.add(BatchNormalization())
 mseModel.add(Dense(500, activation='relu'))
 mseModel.add(Dense(2000, activation='relu'))
+mseModel.add(Dropout(dropout))
 mseModel.add(Dense(2))
 mseModel.compile(optimizer='adam', loss='mse', metrics=['acc'])
 print("saving model ...")
-filename = directory_name_draft +"/"+ str([str(i.output_dim) for i in mseModel.layers]) + ".json"
+filename = directory_name_draft +"/model.json"
 model_json = mseModel.to_json()
 with open(filename, "w") as json_file:
     json_file.write(model_json)
-filename = directory_name_output + "/" + str([str(i.output_dim) for i in mseModel.layers]) + ".json"
+filename = directory_name_output + "/model.json"
 with open(filename, "w") as json_file:
     json_file.write(model_json)
 
@@ -341,6 +348,7 @@ ax21.set_title("dataset prediction")
 
 
 print("saving files ...")
+generate_json(n_samples,data,vectors,globalMSE,directory_name_output + "/dataset.json")
 
 filename = directory_name_output + "/" + str(n_epochs_tsne_mse) + "-loss" + str(mseModel_history.history['loss'][len(mseModel_history.history['loss'])-1]) + "-val_loss" + str(mseModel_history.history['val_loss'][len(mseModel_history.history['val_loss'])-1]) + ".h5"
 mseModel.save_weights(filename)
