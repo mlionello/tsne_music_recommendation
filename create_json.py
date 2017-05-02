@@ -100,6 +100,6 @@ for i in range(n_samples):
 #21: 'BeatType','ChoirType','ClassicalMainGenre' ,'ProminentVoiceType','RhythmicEnsemble','ProminentInstrument','CompositionStyleEra' ,'SoundPeriod','BeatImpact','ClassicalCrossover','ClassicalEnsemble','SoundTexture','TempoFeel'
 data = np.asarray(data)
 output_str = json.dumps(elms, separators=(',',':'))
-output_file = open("data.json", "w")
+output_file = open(str(n_samples)+"dataset_fromMSE.json", "w")
 output_file.write(output_str)
 output_file.close()
