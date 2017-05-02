@@ -24,20 +24,33 @@
 
     <script src="https://code.createjs.com/tweenjs-0.6.2.min.js"></script>
 
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"> </script>
 
     <script type="text/javascript" src="data/Try.json"></script>
+
+    <!--script>
+      // Create a variable with the url to the JSON file
+      var url = "https://gist.githubusercontent.com/d3byex/e5ce6526ba2208014379/raw/8fefb14cc18f0440dc00248f23cbf6aec80dcc13/walking_dead_s5.json";
+
+      // Load the json file
+      d3.json(url, function(error, data) {
+          // Output the first observation to the log
+          console.log(data[0]);
+      });
+    </script-->
 
     <script>
 
       var isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
 
-      var song=songs[2];
       var first=true;
       var stage;
       var rate=13;
       var z1;
       var z2;
+      var data=songs;
 
       function init(){
         if(first){
@@ -49,8 +62,10 @@
         else for(i=0;i<songs.length;i++){
             stage.removeChildAt(0);
           }
-        var em=document.getElementsByClassName("drop")[0].value;
-        //new shape
+        var gn=document.getElementsByClassName("drop")[0].value;
+        n=document.getElementsByName("ns")[0].value;
+        songs=data.slice(0,n);
+
         for(i=0;i<songs.length;i++){
           var circle = new createjs.Shape();
           var c=(songs[i].sad)/7;
@@ -63,22 +78,53 @@
           var b= Math.round(255*(1 - Math.min(1, y * (1 - k) + k)));
           //alert("r: "+r+" g: "+g+" b: "+b+" a: "+a);
 
-          var emotion;
-          switch(em){
-            case "Joy":
-                emotion=Math.round(songs[i].joy);
+          var genre;
+
+          switch(gn){
+            case "blues":
+                genre=Math.round(songs[i].blues);
                 break;
-            case "Angry":
-                emotion=Math.round(songs[i].angry);
+            case "country":
+                genre=Math.round(songs[i].country);
                 break;
-            case "Sad":
-                emotion=Math.round(songs[i].sad);
+            case "easylistening":
+                genre=Math.round(songs[i].easylistening);
                 break;
-            case "Tender":
-                emotion=Math.round(songs[i].tender);
+            case "electronica":
+                genre=Math.round(songs[i].electronica);
                 break;
-            case "Erotic":
-                emotion=Math.round(songs[i].erotic);
+            case "folk":
+                genre=Math.round(songs[i].folk);
+                break;
+            case "hiphopurban":
+                genre=Math.round(songs[i].hiphopurban);
+                break;
+            case "jazz":
+                genre=Math.round(songs[i].jazz);
+                break;
+            case "latin":
+                genre=Math.round(songs[i].latin);
+                break;
+            case "newage":
+                genre=Math.round(songs[i].newage);
+                break;
+            case "pop":
+                genre=Math.round(songs[i].pop);
+                break;
+            case "rnbsoul":
+                genre=Math.round(songs[i].rnbsoul);
+                break;
+            case "rock":
+                genre=Math.round(songs[i].rock);
+                break;
+            case "gospel":
+                genre=Math.round(songs[i].gospel);
+                break;
+            case "reggae":
+                genre=Math.round(songs[i].reggae);
+                break;
+            case "world":
+                genre=Math.round(songs[i].world);
                 break;
           }
           /*
@@ -108,8 +154,8 @@
           }
           */
           var circle;
-          var e=2*emotion;
-          circle.graphics.beginStroke("#777777").beginFill("rgba("+r+","+g+","+b+","+a+")").drawCircle(0, 0, 6+e);
+          var e=2*genre;
+          circle.graphics.beginStroke("#777777").beginFill("rgba("+r+","+g+","+b+","+a+")").drawCircle(0, 0, 12+e);
           circle.x = ((songs[i].x+rate)*demoCanvas.width/(2*rate));
           circle.y = ((songs[i].y+rate)*demoCanvas.height/(2*rate));
           //if((x-2000<=mx)&&(x-2000>=mix)){
@@ -246,15 +292,28 @@
 
     <footer class="footer">
       <select class="drop" onchange="init()">
-        <option value="Joy">Joy</option>
-        <option value="Angry">Angry</option>
-        <option value="Sad">Sad</option>
-        <option value="Tender">Tender</option>
-        <option value="Erotic">Erotic</option>
+        <option value="blues">Blues</option>
+        <option value="country">Country</option>
+        <option value="easylistening">Easy Listening</option>
+        <option value="electronica">Electronica</option>
+        <option value="folk">Folk</option>
+        <option value="hiphopurban">Hip Hop Urban</option>
+        <option value="jazz">Jazz</option>
+        <option value="latin">Latin</option>
+        <option value="newage">New Age</option>
+        <option value="pop">Pop</option>
+        <option value="rnbsoul">R'n'b Soul</option>
+        <option value="rock">Rock</option>
+        <option value="gospel">Gospel</option>
+        <option value="reggae">Reggae</option>
+        <option value="world">World</option>
       </select>
       <div class="vertical">
         <iframe id="player" src="https://embed.spotify.com/?uri=spotify%3Atrack%3A6eZpo3Bp44hOkG2d1v8s5L&theme=white"frameborder="0" allowtransparency="true"></iframe>
       </div>
+      <input class="drop1" type="text" name="ns" value="2000">
+      <input class="drop2" type="button" onclick="init()" value="Draw data">
+
     </footer>
 
 
