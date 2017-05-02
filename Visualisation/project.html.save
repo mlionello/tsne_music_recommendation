@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="icon/play.png">
+
+    <title>Visualisation</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="bootstrap-3.3.7/docs/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <link href="bootstrap-3.3.7/docs/assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="sticky-footer-navbar.css" rel="stylesheet">
+
+    <script src="https://code.createjs.com/easeljs-0.8.2.min.js"></script>
+
+    <script src="https://code.createjs.com/tweenjs-0.6.2.min.js"></script>
+
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"> </script>
+
+    <script type="text/javascript" src="data/.json"></script>
+
+    <script>
+
+      var isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
+
+      var song=songs[2];
+      var first=true;
+      var stage;
+      var rate=13;
+      var z1;
+      var z2;
+
+      function init(){
+        if(first){
+          stage = new createjs.Stage("demoCanvas");
+          z1=1;
+          z2=1;
+          stage.enableMouseOver(20);
+        }
+        else for(i=0;i<songs.length;i++){
+            stage.removeChildAt(0);
+          }
+        var em=document.getElementsByClassName("drop")[0].value;
+        //new shape
+        for(i=0;i<songs.length;i++){
+          var circle = new createjs.Shape();
+          var c=(songs[i].sad)/7;
+          var m=(songs[i].erotic)/7;
+          var y=(songs[i].joy)/7;
+          var k=0;//(songs[i].Angry)/7;
+          var a=1;
+          var r= Math.round(255*(1 - Math.min(1, c * (1 - k) + k)));
+          var g= Math.round(255*(1 - Math.min(1, m * (1 - k) + k)));
+          var b= Math.round(255*(1 - Math.min(1, y * (1 - k) + k)));
+          //alert("r: "+r+" g: "+g+" b: "+b+" a: "+a);
+
+          var emotion;
+          switch(em){
+            case "Joy":
+                emotion=Math.round(songs[i].joy);
+                break;
+            case "Angry":
+                emotion=Math.round(songs[i].angry);
+                break;
+            case "Sad":
+                emotion=Math.round(songs[i].sad);
+                break;
+            case "Tender":
+                emotion=Math.round(songs[i].tender);
+                break;
+            case "Erotic":
+                emotion=Math.round(songs[i].erotic);
+                break;
+          }
+          /*
+          switch (emotion) {
+            case 1:
+                color="#d9ffd3";
+                break;
+            case 2:
+                color="#c6f9b7";
+                break;
+            case 3:
+                color="#b8ddaa";
+                break;
+            case 4:
+                color="#a3d290";
+                break;
+            case 5:
+                color="#a9c384";
+                break;
+            case 6:
+                color="#90ee90";
+                break;
+            case 7:
+                color="#7ccd7c";
+                break;
+            default:
+          }
+          */
+          var circle;
+          var e=2*emotion;
+          circle.graphics.beginStroke("#777777").beginFill("rgba("+r+","+g+","+b+","+a+")").drawCircle(0, 0, 6+e);
+          circle.x = ((songs[i].x+rate)*demoCanvas.width/(2*rate));
+          circle.y = ((songs[i].y+rate)*demoCanvas.height/(2*rate));
+          //if((x-2000<=mx)&&(x-2000>=mix)){
+            //if((y-2000<=my)&&(y+2000>=miy)){
+          circle.id=songs[i].spotifyID;
+          circle.addEventListener("mouseover", function(event) {
+            event.target.scaleX*=1.8;
+            event.target.scaleY*=1.8;
+            stage.update();
+          });
+          circle.addEventListener("mouseout", function(event) {
+            event.target.scaleX/=1.8;
+            event.target.scaleY/=1.8;
+            stage.update();
+          });
+          circle.addEventListener("click", function(event) {
+            song=event.target.id;
+            document.getElementById("player").setAttribute("src",'https://embed.spotify.com/?uri=spotify%3Atrack%3A'+song+'&theme=white');
+            //document.getElementsByClassName("footer")[0].style.backgroundColor="#f4d5fa";
+          });
+          circle.scaleX/=stage.scaleX;
+          circle.scaleY/=stage.scaleY;
+          stage.addChild(circle);
+            //}
+          //}
+        }
+        if(first){
+          demoCanvas.addEventListener("mousewheel", MouseWheelHandler, false);
+          demoCanvas.addEventListener("DOMMouseScroll", MouseWheelHandler, false);
+          stage.addEventListener("stagemousedown", function(e) {
+          	var offset={x:stage.x-e.stageX,y:stage.y-e.stageY};
+          	stage.addEventListener("stagemousemove",function(ev) {
+          		stage.x = ev.stageX+offset.x;
+          		stage.y = ev.stageY+offset.y;
+          		stage.update();
+          	});
+          	stage.addEventListener("stagemouseup", function(){
+          		stage.removeAllEventListeners("stagemousemove");
+          	});
+          });
+        }
+        stage.update();
+        first=false;
+      }
+
+      function MouseWheelHandler(e) {
+          var resizing=false;
+          var mzoom=10;
+        	if(Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)))>0)
+          {
+            if(isSafari){
+              z1=5/mzoom;
+              z2=mzoom/5;
+            }
+            else{
+              //the larger the value of z2 the faster the speed
+          		z1=1/1.10;
+              z2=1.11;
+            }
+          }
+        	else
+          {
+            if(isSafari){
+              z1=mzoom/5;
+              z2=5/mzoom;
+            }
+            else{
+          		z1=1.10;
+              z2=1/1.11;
+            }
+          }
+          var local = stage.globalToLocal(stage.mouseX, stage.mouseY);
+          stage.regX=local.x;
+          stage.regY=local.y;
+          stage.x=stage.mouseX;
+          stage.y=stage.mouseY;
+          stage.scaleX=stage.scaleY*=z2;
+          if((stage.scaleX<1)||(stage.scaleY<1)){

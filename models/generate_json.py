@@ -46,6 +46,7 @@ def generate_json(n_samples,data,vectors,pred,outputfile):
 		#12: 'Angry','Erotic','Fear','Joy','Sad' ,'Tender','Gospel','Reggae','World',
 		#21: 'BeatType','ChoirType','ClassicalMainGenre' ,'ProminentVoiceType','RhythmicEnsemble','ProminentInstrument','CompositionStyleEra' ,'SoundPeriod','BeatImpact','ClassicalCrossover','ClassicalEnsemble','SoundTexture','TempoFeel'
 	output_str = json.dumps(elms, separators=(',',':'))
+	output_str = "var songs = " + output_str;
 	output_file = open(outputfile, "w")
 	output_file.write(output_str)
 	output_file.close()

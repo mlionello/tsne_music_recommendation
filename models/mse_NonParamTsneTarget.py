@@ -27,7 +27,7 @@ from generate_json import generate_json
 n_samples = 20000 #20000
 
 perplexity = 30.0 #30.0
-n_epochs_nnparam = 2000 #2000
+n_epochs_nnparam = 5000 #2000
 nnparam_init='pca' #'pca'
 
 n_epochs_tsne_mse = 200 #200
@@ -35,9 +35,16 @@ batch_tsne_mse = 40 #40
 dropout = 0.25
 
 checkoutEpoch = 20
+
+if (len(sys.argv)>1):
+    n_samples = sys.argv[1]
+    n_epochs_tsne_mse = sys.argv[2]
+    batch_tsne_mse = sys.argv[3]
+    print("settings loaded: n_samples: " + str(n_samples) + "; batch_tsne_mse: " + str(batch_tsne_mse) + "; n_epochs_tsne_mse:" + str(n_epochs_tsne_mse) )
+
 ####################################################################################################
 csv.field_size_limit(sys.maxsize)
-file = open("/Users/matteo/Downloads/trackgenrestylefvdata.csv")
+file = open("../../trackgenrestylefvdata.csv")
 reader = csv.reader(file)
 data = []
 vectors = []
