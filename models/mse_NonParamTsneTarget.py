@@ -36,6 +36,8 @@ dropout = 0.25
 
 checkoutEpoch = 20
 
+Ntraining_set = 70000
+
 if (len(sys.argv)>1):
     n_samples = sys.argv[1]
     n_epochs_tsne_mse = sys.argv[2]
@@ -95,7 +97,7 @@ tsne = manifold.TSNE(n_components=2, init=nnparam_init, random_state=0, n_iter=n
 Y = tsne.fit_transform(vectors)
 print("\tnon-parametric tsne trained in " + str(timeit.default_timer() - start) + " seconds")
 
-training_indx = (np.random.random((int)(vectors.shape[0] * 7 / 10)) * vectors.shape[0]).astype(int)
+training_indx = (np.random.random(Ntraining_set) * vectors.shape[0]).astype(int)
 training_indx = np.sort(np.unique(training_indx))
 testing_indx = np.zeros(vectors.shape[0] - training_indx.shape[0])
 j = 0

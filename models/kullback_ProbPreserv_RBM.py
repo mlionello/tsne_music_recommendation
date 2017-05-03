@@ -38,6 +38,7 @@ checkoutEpoch = 15
 rbm_epochs = 10
 rbm_batch = 20
 
+Ntraining_set = 50000
 
 if (len(sys.argv)>1):
     n_samples = sys.argv[1]
@@ -98,11 +99,12 @@ print("dataset normalization: done")
 print("training non-parametric tsne ...")
 start = timeit.default_timer()
 tsne = manifold.TSNE(n_components=2, init=nnparam_init, random_state=0, n_iter=n_epochs_nnparam, perplexity=perplexity) #epoch to change to 5000
-Y = tsne.fit_transform(vectors)
+#Y = tsne.fit_transform(vectors)
+Y = np.zeros((len(vectors),2))
 
 print("\tnon-parametric tsne trained in " + str(timeit.default_timer() - start) + " seconds")
 
-training_indx = (np.random.random((int)(vectors.shape[0] * 7 / 10)) * vectors.shape[0]).astype(int)
+training_indx = (np.random.random(Ntraining_set) * vectors.shape[0]).astype(int)
 training_indx = np.sort(np.unique(training_indx))
 testing_indx = np.zeros(vectors.shape[0] - training_indx.shape[0])
 j = 0
