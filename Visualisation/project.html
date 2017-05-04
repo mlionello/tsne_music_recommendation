@@ -111,9 +111,9 @@
             default:
           }
           */
-          var e=3*Math.round(songs[i][kind]);
+          var e=2*Math.round(songs[i][kind]);
           circle.graphics.beginFill("rgba("+r+","+g+","+b+","+a+")").drawCircle(0, 0, 12+e);
-          bound.graphics.beginRadialGradientFill(["rgba("+r+","+g+","+b+",0.06)","rgba("+r+","+g+","+b+",0)"],[0, 1],0,0,12,0,0,160).drawCircle(0,0,160);
+          bound.graphics.beginRadialGradientFill(["rgba("+r+","+g+","+b+",0.1)","rgba("+r+","+g+","+b+",0)"],[0, 1],0,0,12,0,0,160).drawCircle(0,0,160);
           circle.x = ((songs[i].x+rate)*demoCanvas.width/(2*rate));
           circle.y = ((songs[i].y+rate)*demoCanvas.height/(2*rate));
           bound.x= circle.x;
@@ -213,6 +213,9 @@
           if(!resizing) for(i=0;i<2*songs.length;i++){
               stage.getChildAt(i).scaleX*=z1;
               stage.getChildAt(i).scaleY*=z1;
+          }
+          for(i=0;i<songs.length;i++){
+              stage.getChildAt(i).alpha-=(1-z1);
           }
           /*
           mx=stage.mouseX*z2+2000;
