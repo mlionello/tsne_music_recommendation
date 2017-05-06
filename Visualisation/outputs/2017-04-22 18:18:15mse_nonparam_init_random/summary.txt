@@ -1,0 +1,7 @@
+1) non parametric output and original data(34-Dimensions): 10.4243572198
+2) parametric tsne output (using the training set) and original data(34-Dimensions): 12.3142715089
+3) non parametric output and : original data(34-Dimensions): 1.74363589009
+training loss: 0.0239758020533;
+training acc: 0.984779154405;
+testing loss: 0.150454688549;
+testing acc: 0.969340576457
