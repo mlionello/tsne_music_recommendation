@@ -56,7 +56,8 @@
       var first=true;
       var stage;
       var mzoom=100;
-      var rate=8;
+      var rangex=0;
+      var rangey=0;
       var z1;
       var z2;
       var one;
@@ -77,6 +78,11 @@
           z1=1;
           z2=1;
           stage.enableMouseOver(20);
+          for(i=0;i<songs.length;i++){
+            if(Math.abs(songs[i].x)>rangex) rangex=Math.ceil(Math.abs(songs[i].x));
+            if(Math.abs(songs[i].y)>rangey) rangey=Math.ceil(Math.abs(songs[i].y));
+          }
+
         }
         else for(i=0;i<3*songs.length;i++){
             stage.removeChildAt(0);
@@ -91,18 +97,19 @@
           var circle = new createjs.Shape();
           var bound = new createjs.Shape();
           var text = new createjs.Text("Artist: "+songs[i].artist+"\nTitle: "+songs[i].title, "40px Arial", "#777777");
-          circle.x = ((songs[i].x+rate)*demoCanvas.width/(2*rate));
-          circle.y = ((songs[i].y+rate)*demoCanvas.height/(2*rate));
+          circle.x = ((songs[i].x+rangex)*(demoCanvas.width)/(2*rangex));
+          circle.y = ((songs[i].y+rangey)*(demoCanvas.height-100)/(2*rangey));
           bound.x= circle.x;
           bound.y= circle.y;
-          text.x=circle.x-2;
-          text.y=circle.y-2;
+          text.x=circle.x+1;
+          text.y=circle.y;
           text.textBaseline = "alphabetic";
           text.visible=false;
-          if(stage.scaleX>0.2*mzoom) text.visible=true;
-          var c=(songs[i][one])/7;
-          var m=(songs[i][two])/7;
-          var y=(songs[i][three])/7;
+          if(stage.scaleX>0.1*mzoom) text.visible=true;
+          if(stage.scaleX>2.10) bound.alpha=0;
+          var c=(songs[i][one]+1)/2;
+          var m=(songs[i][two]+1)/2;
+          var y=(songs[i][three]+1)/2;
           var k=0;//(songs[i].Angry)/7;
           var a=1;
           var r= Math.round(255*(1 - Math.min(1, c * (1 - k) + k)));
@@ -136,10 +143,10 @@
             default:
           }
           */
-          var e=Math.pow(Math.round(songs[i][kind]),2);
+          var e=Math.pow(Math.round(songs[i][kind]+1)*2,2);
           circle.graphics.beginStroke("#777777").beginFill("rgba("+r+","+g+","+b+","+a+")").drawCircle(0, 0, 12+e);
           bound.graphics.beginRadialGradientFill(["rgba("+r+","+g+","+b+",0.1)","rgba("+r+","+g+","+b+",0)"],[0, 1],0,0,10,0,0,100).drawCircle(0,0,100);
-
+          text.shadow = new createjs.Shadow("rgba("+r+","+g+","+b+",0.2)", 5, 5, 10);
           circle.id=i;
           circle.addEventListener("mouseover", function(event) {
             event.target.scaleX*=1.8;
@@ -225,7 +232,7 @@
           stage.x=stage.mouseX;
           stage.y=stage.mouseY;
           stage.scaleX=stage.scaleY*=z2;
-          if(stage.scaleX>0.2*mzoom) for(i=0;i<songs.length;i++){
+          if(stage.scaleX>0.1*mzoom) for(i=0;i<songs.length;i++){
             stage.getChildAt(2*i+songs.length+1).visible=true;
           }
           else for(i=0;i<songs.length;i++){
