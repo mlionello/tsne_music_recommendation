@@ -55,7 +55,8 @@
 
       var first=true;
       var stage;
-      var rate=13;
+      var mzoom=100;
+      var rate=8;
       var z1;
       var z2;
       var one;
@@ -77,9 +78,9 @@
           z2=1;
           stage.enableMouseOver(20);
         }
-        else for(i=0;i<2*songs.length;i++){
+        else for(i=0;i<3*songs.length;i++){
             stage.removeChildAt(0);
-          }
+        }
         var kind=document.getElementsByClassName("drop")[0].value;
         var one=document.getElementById("coloruno").value.toLowerCase();
         var two=document.getElementById("colordue").value.toLowerCase();
@@ -89,6 +90,16 @@
         for(i=0;i<songs.length;i++){
           var circle = new createjs.Shape();
           var bound = new createjs.Shape();
+          var text = new createjs.Text("Artist: "+songs[i].artist+"\nTitle: "+songs[i].title, "40px Arial", "#777777");
+          circle.x = ((songs[i].x+rate)*demoCanvas.width/(2*rate));
+          circle.y = ((songs[i].y+rate)*demoCanvas.height/(2*rate));
+          bound.x= circle.x;
+          bound.y= circle.y;
+          text.x=circle.x-2;
+          text.y=circle.y-2;
+          text.textBaseline = "alphabetic";
+          text.visible=false;
+          if(stage.scaleX>0.2*mzoom) text.visible=true;
           var c=(songs[i][one])/7;
           var m=(songs[i][two])/7;
           var y=(songs[i][three])/7;
@@ -128,10 +139,6 @@
           var e=Math.pow(Math.round(songs[i][kind]),2);
           circle.graphics.beginStroke("#777777").beginFill("rgba("+r+","+g+","+b+","+a+")").drawCircle(0, 0, 12+e);
           bound.graphics.beginRadialGradientFill(["rgba("+r+","+g+","+b+",0.1)","rgba("+r+","+g+","+b+",0)"],[0, 1],0,0,10,0,0,100).drawCircle(0,0,100);
-          circle.x = ((songs[i].x+rate)*demoCanvas.width/(2*rate));
-          circle.y = ((songs[i].y+rate)*demoCanvas.height/(2*rate));
-          bound.x= circle.x;
-          bound.y= circle.y;
 
           circle.id=i;
           circle.addEventListener("mouseover", function(event) {
@@ -155,9 +162,12 @@
           circle.scaleY/=stage.scaleY;
           bound.scaleX/=stage.scaleX;
           bound.scaleY/=stage.scaleY;
+          text.scaleX/=stage.scaleX;
+          text.scaleY/=stage.scaleY;
 
           stage.addChild(circle);
           stage.addChild(bound);
+          stage.addChild(text);
           stage.setChildIndex(bound,0);
         }
         if(first){
@@ -183,7 +193,6 @@
 
       function MouseWheelHandler(e) {
           var resizing=false;
-          var mzoom=16;
           var b;
         	if(Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail)))>0)
           {
@@ -193,10 +202,9 @@
             }
             else{
               //the larger the value of z2 the faster the speed
-          		z1=1/1.10;
+          		z1=1/1.11;
               z2=1.11;
               b=0.08;
-
             }
           }
         	else
@@ -206,9 +214,9 @@
               z2=5/mzoom;
             }
             else{
-          		z1=1.10;
+          		z1=1.11;
               z2=1/1.11;
-              b=-0.04;
+              b=-0.08;
             }
           }
           var local = stage.globalToLocal(stage.mouseX, stage.mouseY);
@@ -217,17 +225,31 @@
           stage.x=stage.mouseX;
           stage.y=stage.mouseY;
           stage.scaleX=stage.scaleY*=z2;
-          if((stage.scaleX<1)||(stage.scaleY<1)){
+          if(stage.scaleX>0.2*mzoom) for(i=0;i<songs.length;i++){
+            stage.getChildAt(2*i+songs.length+1).visible=true;
+          }
+          else for(i=0;i<songs.length;i++){
+            stage.getChildAt(2*i+songs.length+1).visible=false;
+          }
+          if((stage.scaleX<=1)||(stage.scaleY<=1)){
             stage.scaleX=1;
             stage.scaleY=1;
             resizing=true;
+            for(i=0;i<3*songs.length;i++){
+              stage.getChildAt(i).scaleX=1;
+              stage.getChildAt(i).scaleY=1;
+            }
           }
-          if((stage.scaleX>mzoom)||(stage.scaleY>mzoom)){
+          if((stage.scaleX>=mzoom)||(stage.scaleY>=mzoom)){
             stage.scaleX=mzoom;
             stage.scaleY=mzoom;
             resizing=true;
+            for(i=0;i<3*songs.length;i++){
+              stage.getChildAt(i).scaleX=1/mzoom;
+              stage.getChildAt(i).scaleY=1/mzoom;
+            }
           }
-          if(!resizing) for(i=0;i<2*songs.length;i++){
+          if(!resizing) for(i=0;i<3*songs.length;i++){
             stage.getChildAt(i).scaleX*=z1;
             stage.getChildAt(i).scaleY*=z1;
           }
