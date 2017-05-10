@@ -17,23 +17,23 @@ import time
 from keras.layers.normalization import BatchNormalization
 from keras.layers import Dropout
 from generate_json import generate_json
-
+import random
 
 ####################################################################################################
 #
 #                                   PARAMETERS SETTINGS
 #
 ####################################################################################################
-model_id = 0
+model_id = 1
 dataset_type = 0
 
-n_samples = 30000 #20000
-Ntraining_set = 18000
+n_samples = 50000 #20000
+Ntraining_set = 15000
 
 model_layers = [80,80,500]
 
-batch_tsne_kullback = 1000
-nb_epoch_tsne_kullback = 10
+batch_tsne_kullback = 1500
+nb_epoch_tsne_kullback = 50
 
 
 perplexity = 30.0 #30.0
@@ -192,8 +192,9 @@ Y = np.zeros((len(vectors),2))
 
 print("\tnon-parametric tsne trained in " + str(timeit.default_timer() - start) + " seconds")
 
-training_indx = (np.random.random(Ntraining_set) * vectors.shape[0]).astype(int)
-training_indx = np.sort(np.unique(training_indx))
+#training_indx = (np.random.random(Ntraining_set) * vectors.shape[0]).astype(int)
+#training_indx = np.sort(np.unique(training_indx))
+training_indx = np.asarray(random.sample(range(1,vectors.shape[0]-1), Ntraining_set))
 testing_indx = np.zeros(vectors.shape[0] - training_indx.shape[0])
 j = 0
 for i in range(vectors.shape[0]):
@@ -524,6 +525,7 @@ print('probability matrixes size: %.2fMB' % ( (sys.getsizeof(P) + sys.getsizeof(
 loss_tst =[]
 loss_tr=[]
 knnAcc = []
+knnSens = []
 
 tsneModel = Sequential()
 #if model_id==0:
@@ -574,19 +576,8 @@ with open(filename, "w") as json_file:
     json_file.write(model_json)
 
 tsneModel.save_weights(filename)
-
-knn = KNeighborsClassifier(n_neighbors=1)
-#sad_groundtruth_tr = sad_groundtruth_tr[:tsneModel_tr0.shape[0]]
-#sad_groundtruth_tst = sad_groundtruth_tst[:tsneModel_tst0.shape[0]]
-knn.fit(tsneModel_tr0, sad_groundtruth_tr)
-predicted = knn.predict(tsneModel_tst0)
-con_mat = confusion_matrix(sad_groundtruth_tst, predicted, [1, 0])
-sad_accuracy = con_mat[0,0]/np.sum(con_mat[0,:])
-print('starting sad precision KNN: %.5f' % sad_accuracy) #sensitivity
-print(con_mat)
-print('rate of sad songs: %.3f\n' % (len(np.nonzero(sad_groundtruth)[0])/len(sad_groundtruth)))
 sad_groundtruth_tr_shuffle = sad_groundtruth_tr
-
+genre_groundtruth_tr_shuffle = genre_groundtruth_tr
 print("training parametric tsne -kullback with probability preservation")
 start = timeit.default_timer()
 for i in range(nb_epoch_tsne_kullback):
@@ -605,16 +596,21 @@ for i in range(nb_epoch_tsne_kullback):
         knn.fit(tsneModel_tr, sad_groundtruth_tr_shuffle)
         predicted = knn.predict(tsneModel_tst)
         con_mat = confusion_matrix(sad_groundtruth_tst, predicted, [1, 0])
-        sad_accuracy = con_mat[0,0]/np.sum(con_mat[0,:]) #sensitivity
-        print('sad accuracy KNN: %.5f' % sad_accuracy)
-        print(con_mat)
-        knnAcc.append(sad_accuracy)
+        sad_sens = con_mat[0,0]/np.sum(con_mat[0,:]) #sensitivity
+        knn.fit(tsneModel_tr, genre_groundtruth_tr_shuffle)
+        predicted = knn.predict(tsneModel_tst)
+        con_mat = confusion_matrix(genre_groundtruth_tst, predicted,
+                                   [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
+        total_accuracy = (np.sum(np.diag(con_mat) / float(np.sum(con_mat))))
+        print('sad sensitivity KNN: %.5f, genres accuracy KNN: %.5f' % (sad_sens,total_accuracy))
+        knnSens.append(sad_sens)
+        knnAcc.append(total_accuracy)
     shuffleindx = np.random.permutation(range(len(training_data_tsne)))
     P = compute_joint_probabilities(training_data[[shuffleindx]], batch_size=batch_tsne_kullback, verbose=0, perplexity=perplexity)
     Y_train_tsne = P.reshape(P.shape[0] * P.shape[1], -1)
     training_data_tsne = training_data[[shuffleindx]]
     sad_groundtruth_tr_shuffle = sad_groundtruth_tr[[shuffleindx]]
-
+    genre_groundtruth_tr_shuffle = genre_groundtruth_tr[[shuffleindx]]
 #training_label = training_label[[shuffleindx]]
 
 
@@ -623,27 +619,6 @@ print("\tparametric tsne trained in " + str(timeit.default_timer() - start) + " 
 print("predicting parametric tsne ...")
 tsneModel_tr = tsneModel.predict(training_data)
 tsneModel_tst = tsneModel.predict(testing_data) # 0.31
-
-
-knn = KNeighborsClassifier(n_neighbors=1)
-#sad_groundtruth_tr = sad_groundtruth_tr[:tsneModel_tr0.shape[0]]
-#sad_groundtruth_tst = sad_groundtruth_tst[:tsneModel_tst0.shape[0]]
-knn.fit(tsneModel_tr0, sad_groundtruth_tr)
-predicted = knn.predict(tsneModel_tst0)
-con_mat = confusion_matrix(sad_groundtruth_tst, predicted, [1, 0])
-sad_accuracy = con_mat[0,0]/np.sum(con_mat[0,:])
-print('starting sad precision KNN: %.5f' % sad_accuracy) #sensitivity
-print(con_mat)
-
-knn = KNeighborsClassifier(n_neighbors=1)
-#sad_groundtruth_tr = sad_groundtruth_tr[:tsneModel_tr.shape[0]]
-#sad_groundtruth_tst = sad_groundtruth_tst[:tsneModel_tst.shape[0]]
-knn.fit(tsneModel_tr, sad_groundtruth_tr)
-predicted = knn.predict(tsneModel_tst)
-con_mat = confusion_matrix(sad_groundtruth_tst, predicted, [1, 0])
-sad_accuracy = con_mat[0,0]/np.sum(con_mat[0,:])
-print('ending sad precision KNN: %.5f' % sad_accuracy) #sensitivity
-print(con_mat)
 
 ######################################################################################################
 globalKullback = tsneModel.predict(vectors)
@@ -692,8 +667,6 @@ for i in [[angry_groundtruth_tr, angry_groundtruth_tst], [erotic_groundtruth_tr,
     evaluations.append(maccuracy(i[0], i[1]))
     print(str(emotion_names[j]) + ' sensitivity: %.4f -> %.4f' % (evaluations[j][0], evaluations[j][1]))
     j+=1
-
-
 
 """
 print("calculating probability distribution preservation/conservation bof the data ...")
@@ -768,7 +741,7 @@ def onpick(event):
 print("plotting ...")
 fig = plt.figure(figsize=(10, 10), dpi=80)
 fig.canvas.mpl_connect('pick_event', onpick)
-gs = gridspec.GridSpec(4, 3)
+gs = gridspec.GridSpec(5, 3)
 
 fig0 = fig.add_subplot(gs[0,0])
 fig0.scatter(tsneModel_tr0[:, 0], tsneModel_tr0[:, 1], s=6, c=sad_groundtruth_tr)#[:tsneModel_tr.shape[0]])
@@ -804,13 +777,16 @@ ax7 = fig.add_subplot(gs[3,:])
 ax7.plot(knnAcc)
 ax7.set_title("knn accuracy")
 
+ax8 = fig.add_subplot(gs[4,:])
+ax8.plot(knnSens)
+ax8.set_title("sad sensitivity")
+
 
 fig2 = plt.figure(figsize=(10, 10), dpi=80)
 fig2.canvas.mpl_connect('pick_event', onpick)
 ax21 = fig2.add_subplot(1,1,1)
 ax21.scatter(globalKullback[:, 0], globalKullback[:, 1],s = 8, c=color,picker=True)
 ax21.set_title("dataset prediction")
-
 
 
 print("saving files ...")
