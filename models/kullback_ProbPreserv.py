@@ -24,7 +24,7 @@ import random
 #                                   PARAMETERS SETTINGS
 #
 ####################################################################################################
-model_id = 1
+model_id = 2
 dataset_type = 0
 
 n_samples = 50000 #20000
@@ -43,10 +43,10 @@ dropout = 0.01
 
 checkoutEpoch = 1
 
-rbm_batch = 200
-rbm_epochs = 30
+rbm_batch = 100
+rbm_epochs = 10
 
-ae_batch = 200
+ae_batch = 100
 ae_epochs = 10
 
 if (len(sys.argv)>1):
