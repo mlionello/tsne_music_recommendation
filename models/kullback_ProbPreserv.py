@@ -24,38 +24,61 @@ from generate_json import generate_json
 #                                   PARAMETERS SETTINGS
 #
 ####################################################################################################
-model_id = 2
+model_id = 0
+dataset_type = 0
 
-n_samples = 3000 #20000
-Ntraining_set = 1000
+n_samples = 30000 #20000
+Ntraining_set = 18000
 
-model_layers = [80,80,1000]
+model_layers = [80,80,500]
 
-batch_tsne_kullback = 500
-nb_epoch_tsne_kullback = 300
+batch_tsne_kullback = 1000
+nb_epoch_tsne_kullback = 10
 
 
 perplexity = 30.0 #30.0
 n_epochs_nnparam = 200 #2000
 nnparam_init='pca' #'pca'
-dropout = 0.5
+dropout = 0.01
 
-checkoutEpoch = 2
+checkoutEpoch = 1
 
 rbm_batch = 200
-rbm_epochs = 10
+rbm_epochs = 30
 
-ae_epochs = 30
-ae_batch = 500
+ae_batch = 200
+ae_epochs = 10
 
 if (len(sys.argv)>1):
-    model_id = sys.argv[1]
-    n_samples = sys.argv[2]
-    batch_tsne_kullback = sys.argv[3]
-    nb_epoch_tsne_kullback = sys.argv[4]
+    model_id = (int)(sys.argv[1])
+    n_samples = (int)(sys.argv[2])
+    Ntraining_set = (int)(sys.argv[3])
+    batch_tsne_kullback = (int)(sys.argv[4])
+    nb_epoch_tsne_kullback = (int)(sys.argv[5])
+
+if (len(sys.argv)!=1 and len(sys.argv)!=6):
+    print("number of arguments not valid: " + str(len(sys.argv)))
+    exit()
 
 print("settings loaded: n_samples: " + str(n_samples) + "; batch_tsne_kullback: " + str(batch_tsne_kullback) + "; nb_epoch_tsne_kullback:" + str(nb_epoch_tsne_kullback))
+print(model_layers)
 
+
+if model_id==0:
+    print("kullback loss")
+if model_id==1:
+    print("kullback loss, AutoEncoder pretraining")
+if model_id==2:
+    print("kullback loss, RBM pretraining")
+
+if dataset_type==0:
+    print("dataset as concatenation [first, mean(mid), last]")
+if dataset_type==1:
+    print("dataset as concatenation [mean var]")
+if dataset_type==2:
+    print("dataset as mean")
+
+print("")
 ####################################################################################################
 
 csv.field_size_limit(sys.maxsize)
@@ -95,7 +118,7 @@ for row in reader:
     data.append(record)
     genre_groundtruth.append(record[4])
     #vectors.append(a)
-    if True:
+    if dataset_type==0:
         if len(a)>3:
             a = np.concatenate((a[0], np.mean(a[1:len(a)-1],axis=0), a[len(a)-1]))
         else:
@@ -106,7 +129,7 @@ for row in reader:
         joy_groundtruth.append((int)(np.mean([a[15], a[34+15], a[34*2+15]]) >= 5))
         sad_groundtruth.append((int)(np.mean([a[16], a[34+16], a[34*2+16]]) >= 5))
         tender_groundtruth.append((int)(np.mean([a[17], a[34+17], a[34*2+17]]) >= 5))
-    if False:
+    if dataset_type==1:
         a = np.concatenate((np.mean(a,axis=0),np.var(a,axis=0)))
         angry_groundtruth.append((int)(a[12]>= 5))
         erotic_groundtruth.append((int)(a[13] >= 5))
@@ -114,7 +137,7 @@ for row in reader:
         joy_groundtruth.append((int)(a[15] >= 5))
         sad_groundtruth.append((int)(a[16] >= 5))
         tender_groundtruth.append((int)(a[17] >= 5))
-    if False:
+    if dataset_type==2:
         a = np.mean(a, axis=0)
         angry_groundtruth.append((int)(a[12]>= 5))
         erotic_groundtruth.append((int)(a[13] >= 5))
@@ -212,13 +235,17 @@ sad_groundtruth_tst= np.array([sad_groundtruth[(int)(i)] for i in testing_indx])
 tender_groundtruth_tr= np.array([tender_groundtruth[(int)(i)] for i in training_indx])
 tender_groundtruth_tst= np.array([tender_groundtruth[(int)(i)] for i in testing_indx])
 
+print('vectors size:  %.2fMB' % (sys.getsizeof(vectors)/1000/1000))
+print("data size: %.2fMB" % (sys.getsizeof(data)/1000/1000))
+print("total amount of memory used: %.2fMB" % ((sys.getsizeof(data) + sys.getsizeof(vectors) + sys.getsizeof(genre_groundtruth)*7 + sys.getsizeof(genre_groundtruth_tr)*7 + sys.getsizeof(genre_groundtruth_tst)*7)/1000/1000))
+
 #########################################################################################################
 if model_id==2:
     # training rbm
     start = timeit.default_timer()
 
     print("starting restricted boltzman machine ...")
-    H = [80, 80, 1000, 2]
+    H = [model_layers[0], model_layers[1], model_layers[2], 2]
     W = [None] * len(H)
     bias_upW = [None] * len(H)
     bias_downW = [None] * len(H)
@@ -467,11 +494,18 @@ if model_id==1:
 if model_id==2:
     tmp = "kullback_tsneLoss_RBM"
 
+if dataset_type == 0:
+    tmp = tmp + "concat_F_MEAN_LAST"
+if dataset_type == 1:
+    tmp = tmp + "concat_mean_var"
+if dataset_type == 2:
+    tmp = tmp + "mean"
+
 directory_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 directory_name =  directory_name + "_" + str(n_samples) + str(tmp) + "-batch" + str(batch_tsne_kullback) + "-epochs" + str(nb_epoch_tsne_kullback)
 directory_name_draft = "../drafts/" + directory_name
 directory_name_output = "../outputs/" + directory_name
-print("creating director ...")
+print("creating directories ...")
 if not os.path.exists(directory_name_draft):
     os.makedirs(directory_name_draft)
 if not os.path.exists(directory_name_output):
@@ -485,31 +519,45 @@ training_data_tsne = training_data[:Y_train_tsne.shape[0], :]
 Y_val_tsne = P_val.reshape(P_val.shape[0] * P_val.shape[1], -1)
 val_data_tsne = testing_data[:Y_val_tsne.shape[0], :]
 
+print('probability matrixes size: %.2fMB' % ( (sys.getsizeof(P) + sys.getsizeof(P_val) +  sys.getsizeof(Y_train_tsne) + sys.getsizeof(training_data_tsne) + sys.getsizeof(Y_val_tsne) + sys.getsizeof(val_data_tsne) )/1000/1000) )
+
 loss_tst =[]
 loss_tr=[]
 knnAcc = []
 
 tsneModel = Sequential()
-if model_id==0:
-    tsneModel.add(Dense(model_layers[0], activation='relu', input_shape=(vectors.shape[1],)))
-    tsneModel.add(Dense(model_layers[1], activation='relu'))
-    tsneModel.add(Dense(model_layers[2], activation='relu'))
-    tsneModel.add(Dropout(dropout))
-    tsneModel.add(Dense(2))
+#if model_id==0:
+tsneModel.add(Dense(model_layers[0], activation='relu', input_shape=(vectors.shape[1],)))
+tsneModel.add(Dense(model_layers[1], activation='relu'))
+tsneModel.add(Dense(model_layers[2], activation='relu'))
+tsneModel.add(Dropout(dropout))
+tsneModel.add(Dense(2))
+
+tsneModel_tr0 = tsneModel.predict(training_data)
+tsneModel_tst0 = tsneModel.predict(testing_data)  # 0.31
+
 
 if model_id==1:
-    tsneModel.add(Dense(model_layers[0], activation='relu', weights=autoencoder1.layers[1].get_weights(), input_shape=(vectors.shape[1],)))
-    tsneModel.add(Dense(model_layers[1], activation='relu', weights=autoencoder2.layers[1].get_weights()))
-    tsneModel.add(Dense(model_layers[2], activation='relu', weights=autoencoder3.layers[1].get_weights()))
-    tsneModel.add(Dropout(dropout))
-    tsneModel.add(Dense(2, weights=autoencoder4.layers[1].get_weights()))
+    #tsneModel.add(Dense(model_layers[0], activation='relu', weights=autoencoder1.layers[1].get_weights(), input_shape=(vectors.shape[1],)))
+    #tsneModel.add(Dense(model_layers[1], activation='relu', weights=autoencoder2.layers[1].get_weights()))
+    #tsneModel.add(Dense(model_layers[2], activation='relu', weights=autoencoder3.layers[1].get_weights()))
+    #tsneModel.add(Dropout(dropout))
+    #tsneModel.add(Dense(2, weights=autoencoder4.layers[1].get_weights()))
+    tsneModel.layers[0].set_weights(autoencoder1.layers[1].get_weights())
+    tsneModel.layers[1].set_weights(autoencoder2.layers[1].get_weights())
+    tsneModel.layers[2].set_weights(autoencoder3.layers[1].get_weights())
+    tsneModel.layers[4].set_weights(autoencoder4.layers[1].get_weights())
 
 if model_id==2:
-    tsneModel.add(Dense(model_layers[0], activation='relu', weights=pretrained_weights[0], input_shape=(vectors.shape[1],)))
-    tsneModel.add(Dense(model_layers[1], activation='relu', weights=pretrained_weights[1]))
-    tsneModel.add(Dense(model_layers[2], activation='relu', weights=pretrained_weights[2]))
-    tsneModel.add(Dropout(dropout))
-    tsneModel.add(Dense(2, weights=pretrained_weights[3]))
+    #tsneModel.add(Dense(model_layers[0], activation='relu', weights=pretrained_weights[0], input_shape=(vectors.shape[1],)))
+    #tsneModel.add(Dense(model_layers[1], activation='relu', weights=pretrained_weights[1]))
+    #tsneModel.add(Dense(model_layers[2], activation='relu', weights=pretrained_weights[2]))
+    tsneModel.layers[0].set_weights(pretrained_weights[0])
+    tsneModel.layers[1].set_weights(pretrained_weights[1])
+    tsneModel.layers[2].set_weights(pretrained_weights[2])
+    tsneModel.layers[4].set_weights(pretrained_weights[3])
+    #tsneModel.add(Dropout(dropout))
+    #tsneModel.add(Dense(2, weights=pretrained_weights[3]))
     training_data_tsne = (training_data_tsne) / np.amax(training_data_tsne)
     testing_data= (testing_data) / np.amax(testing_data)
     vectors = (vectors)/np.amax(vectors+1)
@@ -525,6 +573,20 @@ filename = directory_name_output + "/model.json"
 with open(filename, "w") as json_file:
     json_file.write(model_json)
 
+tsneModel.save_weights(filename)
+
+knn = KNeighborsClassifier(n_neighbors=1)
+#sad_groundtruth_tr = sad_groundtruth_tr[:tsneModel_tr0.shape[0]]
+#sad_groundtruth_tst = sad_groundtruth_tst[:tsneModel_tst0.shape[0]]
+knn.fit(tsneModel_tr0, sad_groundtruth_tr)
+predicted = knn.predict(tsneModel_tst0)
+con_mat = confusion_matrix(sad_groundtruth_tst, predicted, [1, 0])
+sad_accuracy = con_mat[0,0]/np.sum(con_mat[0,:])
+print('starting sad precision KNN: %.5f' % sad_accuracy) #sensitivity
+print(con_mat)
+print('rate of sad songs: %.3f\n' % (len(np.nonzero(sad_groundtruth)[0])/len(sad_groundtruth)))
+sad_groundtruth_tr_shuffle = sad_groundtruth_tr
+
 print("training parametric tsne -kullback with probability preservation")
 start = timeit.default_timer()
 for i in range(nb_epoch_tsne_kullback):
@@ -539,35 +601,57 @@ for i in range(nb_epoch_tsne_kullback):
         tsneModel_tr = tsneModel.predict(training_data_tsne)
         tsneModel_tst = tsneModel.predict(testing_data)  # 0.31
         knn = KNeighborsClassifier(n_neighbors=1)
-        genre_groundtruth_tr = genre_groundtruth_tr[:tsneModel_tr.shape[0]]
-        genre_groundtruth_tst = genre_groundtruth_tst[:tsneModel_tst.shape[0]]
-        knn.fit(tsneModel_tr, genre_groundtruth_tr)
+        sad_groundtruth_tr_shuffle = sad_groundtruth_tr_shuffle[:tsneModel_tr.shape[0]]
+        knn.fit(tsneModel_tr, sad_groundtruth_tr_shuffle)
         predicted = knn.predict(tsneModel_tst)
-        con_mat = confusion_matrix(genre_groundtruth_tst, predicted, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
-        total_accuracy = (np.sum(np.diag(con_mat) / float(np.sum(con_mat))))
-        print("\ttotal accuracy 1NN for genre: " + str(total_accuracy))
-        knnAcc.append(total_accuracy)
+        con_mat = confusion_matrix(sad_groundtruth_tst, predicted, [1, 0])
+        sad_accuracy = con_mat[0,0]/np.sum(con_mat[0,:]) #sensitivity
+        print('sad accuracy KNN: %.5f' % sad_accuracy)
+        print(con_mat)
+        knnAcc.append(sad_accuracy)
     shuffleindx = np.random.permutation(range(len(training_data_tsne)))
     P = compute_joint_probabilities(training_data[[shuffleindx]], batch_size=batch_tsne_kullback, verbose=0, perplexity=perplexity)
     Y_train_tsne = P.reshape(P.shape[0] * P.shape[1], -1)
     training_data_tsne = training_data[[shuffleindx]]
+    sad_groundtruth_tr_shuffle = sad_groundtruth_tr[[shuffleindx]]
 
-training_label = training_label[[shuffleindx]]
+#training_label = training_label[[shuffleindx]]
 
 
 print("\tparametric tsne trained in " + str(timeit.default_timer() - start) + " seconds")
 
 print("predicting parametric tsne ...")
-tsneModel_tr = tsneModel.predict(training_data_tsne)
+tsneModel_tr = tsneModel.predict(training_data)
 tsneModel_tst = tsneModel.predict(testing_data) # 0.31
+
+
+knn = KNeighborsClassifier(n_neighbors=1)
+#sad_groundtruth_tr = sad_groundtruth_tr[:tsneModel_tr0.shape[0]]
+#sad_groundtruth_tst = sad_groundtruth_tst[:tsneModel_tst0.shape[0]]
+knn.fit(tsneModel_tr0, sad_groundtruth_tr)
+predicted = knn.predict(tsneModel_tst0)
+con_mat = confusion_matrix(sad_groundtruth_tst, predicted, [1, 0])
+sad_accuracy = con_mat[0,0]/np.sum(con_mat[0,:])
+print('starting sad precision KNN: %.5f' % sad_accuracy) #sensitivity
+print(con_mat)
+
+knn = KNeighborsClassifier(n_neighbors=1)
+#sad_groundtruth_tr = sad_groundtruth_tr[:tsneModel_tr.shape[0]]
+#sad_groundtruth_tst = sad_groundtruth_tst[:tsneModel_tst.shape[0]]
+knn.fit(tsneModel_tr, sad_groundtruth_tr)
+predicted = knn.predict(tsneModel_tst)
+con_mat = confusion_matrix(sad_groundtruth_tst, predicted, [1, 0])
+sad_accuracy = con_mat[0,0]/np.sum(con_mat[0,:])
+print('ending sad precision KNN: %.5f' % sad_accuracy) #sensitivity
+print(con_mat)
 
 ######################################################################################################
 globalKullback = tsneModel.predict(vectors)
 
 ## GENRE
 knn = KNeighborsClassifier(n_neighbors=1)
-genre_groundtruth_tr = genre_groundtruth_tr[:tsneModel_tr.shape[0]]
-genre_groundtruth_tst = genre_groundtruth_tst[:tsneModel_tst.shape[0]]
+#genre_groundtruth_tr = genre_groundtruth_tr[:tsneModel_tr.shape[0]]
+#genre_groundtruth_tst = genre_groundtruth_tst[:tsneModel_tst.shape[0]]
 knn.fit(tsneModel_tr, genre_groundtruth_tr)
 predicted = knn.predict(tsneModel_tst)
 con_mat = confusion_matrix(genre_groundtruth_tst, predicted, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
@@ -581,65 +665,34 @@ print('Total accuracy: %.5f' % total_accuracy)
 for i in range(len(genre_dict)):
     print('Genre ' + genre_dict[i] + ' accuracy: %.5f' % class_accuracy[i])
 
-## ANGRY
-knn = KNeighborsClassifier(n_neighbors=1)
-angry_groundtruth_tr = angry_groundtruth_tr[:tsneModel_tr.shape[0]]
-angry_groundtruth_tst = angry_groundtruth_tst[:tsneModel_tst.shape[0]]
-knn.fit(tsneModel_tr, angry_groundtruth_tr)
-predicted = knn.predict(tsneModel_tst)
-con_mat = confusion_matrix(angry_groundtruth_tst, predicted, [0, 1])
-angry_accuracy = (np.sum(np.diag(con_mat) / float(np.sum(con_mat))))
-print('angry accuracy: %.5f' % angry_accuracy)
 
-## EROTIC
-knn = KNeighborsClassifier(n_neighbors=1)
-erotic_groundtruth_tr = erotic_groundtruth_tr[:tsneModel_tr.shape[0]]
-erotic_groundtruth_tst = erotic_groundtruth_tst[:tsneModel_tst.shape[0]]
-knn.fit(tsneModel_tr, erotic_groundtruth_tr)
-predicted = knn.predict(tsneModel_tst)
-con_mat = confusion_matrix(erotic_groundtruth_tst, predicted, [0, 1])
-erotic_accuracy = (np.sum(np.diag(con_mat) / float(np.sum(con_mat))))
-print('erotic accuracy: %.5f' % erotic_accuracy)
+def maccuracy(groundtruth_tr,groundtruth_tst):
+    knn = KNeighborsClassifier(n_neighbors=1)
+    #groundtruth_tr = groundtruth_tr[:tsneModel_tr.shape[0]]
+    #groundtruth_tst = groundtruth_tst[:tsneModel_tst.shape[0]]
 
-## FEAR
-knn = KNeighborsClassifier(n_neighbors=1)
-fear_groundtruth_tr = fear_groundtruth_tr[:tsneModel_tr.shape[0]]
-fear_groundtruth_tst = fear_groundtruth_tst[:tsneModel_tst.shape[0]]
-knn.fit(tsneModel_tr, fear_groundtruth_tr)
-predicted = knn.predict(tsneModel_tst)
-con_mat = confusion_matrix(fear_groundtruth_tst, predicted, [0, 1])
-fear_accuracy = (np.sum(np.diag(con_mat) / float(np.sum(con_mat))))
-print('fear accuracy: %.5f' % fear_accuracy)
+    knn.fit(tsneModel_tr, groundtruth_tr)
+    predicted = knn.predict(tsneModel_tst)
+    con_mat = confusion_matrix(groundtruth_tst, predicted, [1, 0])
+    output = con_mat[0, 0] / np.sum(con_mat[0, :])
+    print(con_mat)
 
-## JOY
-knn = KNeighborsClassifier(n_neighbors=1)
-joy_groundtruth_tr = joy_groundtruth_tr[:tsneModel_tr.shape[0]]
-joy_groundtruth_tst = joy_groundtruth_tst[:tsneModel_tst.shape[0]]
-knn.fit(tsneModel_tr, joy_groundtruth_tr)
-predicted = knn.predict(tsneModel_tst)
-con_mat = confusion_matrix(joy_groundtruth_tst, predicted, [0, 1])
-joy_accuracy = (np.sum(np.diag(con_mat) / float(np.sum(con_mat))))
-print('joy accuracy: %.5f' % joy_accuracy)
+    knn = KNeighborsClassifier(n_neighbors=1)
+    knn.fit(tsneModel_tr0, groundtruth_tr)
+    predicted = knn.predict(tsneModel_tst0)
+    con_mat = confusion_matrix(groundtruth_tst, predicted, [1, 0])
+    output0 = con_mat[0, 0] / np.sum(con_mat[0, :])
+    return [output0, output]
 
-## SAD
-knn = KNeighborsClassifier(n_neighbors=1)
-sad_groundtruth_tr = sad_groundtruth_tr[:tsneModel_tr.shape[0]]
-sad_groundtruth_tst = sad_groundtruth_tst[:tsneModel_tst.shape[0]]
-knn.fit(tsneModel_tr, sad_groundtruth_tr)
-predicted = knn.predict(tsneModel_tst)
-con_mat = confusion_matrix(sad_groundtruth_tst, predicted, [0, 1])
-sad_accuracy = (np.sum(np.diag(con_mat) / float(np.sum(con_mat))))
-print('sad accuracy: %.5f' % sad_accuracy)
+emotion_names=['angry','erotic','fear','joy','sad','tender']
+evaluations = []
+j=0
+for i in [[angry_groundtruth_tr, angry_groundtruth_tst], [erotic_groundtruth_tr, erotic_groundtruth_tst], [fear_groundtruth_tr, fear_groundtruth_tst],
+          [joy_groundtruth_tr, joy_groundtruth_tst], [sad_groundtruth_tr,sad_groundtruth_tst], [tender_groundtruth_tr, tender_groundtruth_tst]]:
+    evaluations.append(maccuracy(i[0], i[1]))
+    print(str(emotion_names[j]) + ' sensitivity: %.4f -> %.4f' % (evaluations[j][0], evaluations[j][1]))
+    j+=1
 
-## TENDER
-knn = KNeighborsClassifier(n_neighbors=1)
-tender_groundtruth_tr = tender_groundtruth_tr[:tsneModel_tr.shape[0]]
-tender_groundtruth_tst = tender_groundtruth_tst[:tsneModel_tst.shape[0]]
-knn.fit(tsneModel_tr, tender_groundtruth_tr)
-predicted = knn.predict(tsneModel_tst)
-con_mat = confusion_matrix(tender_groundtruth_tst, predicted, [0, 1])
-tender_accuracy = (np.sum(np.diag(con_mat) / float(np.sum(con_mat))))
-print('tender accuracy: %.5f' % tender_accuracy)
 
 
 """
@@ -689,7 +742,7 @@ if model_id == 1:
     model_encoder.add(Dense(model_layers[1], activation='relu', weights=autoencoder2.layers[1].get_weights()))
     model_encoder.add(Dense(model_layers[2], activation='relu', weights=autoencoder3.layers[1].get_weights()))
     model_encoder.add(Dense(2, weights=autoencoder4.layers[1].get_weights()))
-    model_encoder_tr = model_encoder.predict(training_data[[shuffleindx]])
+    model_encoder_tr = model_encoder.predict(training_data)
     model_encoder_tst = model_encoder.predict(testing_data)
 
 model_RBM = Sequential()
@@ -700,7 +753,7 @@ if model_id==2:
     model_RBM.add(Dense(model_layers[1], activation='relu', weights=pretrained_weights[1]))
     model_RBM.add(Dense(model_layers[2], activation='relu', weights=pretrained_weights[2]))
     model_RBM.add(Dense(2, weights=pretrained_weights[3]))
-    encoder_RBM_tr = model_RBM.predict(training_data[[shuffleindx]])
+    encoder_RBM_tr = model_RBM.predict(training_data)
     encoder_RBM_tst = model_RBM.predict(testing_data)
 
 ######################################################################################################
@@ -713,31 +766,31 @@ def onpick(event):
         print("artist: " + data[i][1] + " song:" + data[i][2])
 
 print("plotting ...")
-fig = plt.figure()
+fig = plt.figure(figsize=(10, 10), dpi=80)
 fig.canvas.mpl_connect('pick_event', onpick)
-gs = gridspec.GridSpec(4, 2)
+gs = gridspec.GridSpec(4, 3)
 
-ax1 = fig.add_subplot(gs[0,0])
-ax1.scatter(Y[:, 0], Y[:, 1], c=color, s = 6, picker=True)
-ax1.set_title("non parametric TSNE")
-
-if model_id==0:
-    ax2 = fig.add_subplot(gs[0, 1])
-    ax2.scatter(tsneModel_tr[:, 0], tsneModel_tr[:, 1], s=6, c=training_label[:tsneModel_tr.shape[0]])
-    ax2.scatter(tsneModel_tst[:, 0], tsneModel_tst[:, 1], s=6, c=testing_label[:tsneModel_tst.shape[0]], marker='^')
-    ax2.set_title("TSNE_ as LOSS")
+fig0 = fig.add_subplot(gs[0,0])
+fig0.scatter(tsneModel_tr0[:, 0], tsneModel_tr0[:, 1], s=6, c=sad_groundtruth_tr)#[:tsneModel_tr.shape[0]])
+fig0.scatter(tsneModel_tst0[:, 0], tsneModel_tst0[:, 1], s=6, c=sad_groundtruth_tst, marker='^')#[:tsneModel_tst.shape[0]], marker='^')
+fig0.set_title("no training")
 
 if model_id==1:
     axx2 = fig.add_subplot(gs[0, 1])
-    axx2.scatter(model_encoder_tr[:, 0], model_encoder_tr[:, 1], s=6, c=training_label[:model_encoder_tr.shape[0]])
-    axx2.scatter(model_encoder_tst[:, 0], model_encoder_tst[:, 1], s=6, c=testing_label[:model_encoder_tst.shape[0]],marker='^')
+    axx2.scatter(model_encoder_tr[:, 0], model_encoder_tr[:, 1], s=6, c=sad_groundtruth_tr)#[:model_encoder_tr.shape[0]])
+    axx2.scatter(model_encoder_tst[:, 0], model_encoder_tst[:, 1], s=6, c=sad_groundtruth_tst, marker='^')#'[:model_encoder_tst.shape[0]],marker='^')
     axx2.set_title("autoencoders")
 
 if model_id==2:
     axx2 = fig.add_subplot(gs[0, 1])
-    axx2.scatter(encoder_RBM_tr[:, 0], encoder_RBM_tr[:, 1], s=6, c=training_label[:encoder_RBM_tr.shape[0]])
-    axx2.scatter(encoder_RBM_tst[:, 0], encoder_RBM_tst[:, 1], s=6, c=testing_label[:encoder_RBM_tst.shape[0]],marker='^')
+    axx2.scatter(encoder_RBM_tr[:, 0], encoder_RBM_tr[:, 1], s=6, c=sad_groundtruth_tr)#[:encoder_RBM_tr.shape[0]])
+    axx2.scatter(encoder_RBM_tst[:, 0], encoder_RBM_tst[:, 1], s=6, c=sad_groundtruth_tst,maerker='^')#'[:encoder_RBM_tst.shape[0]],marker='^')
     axx2.set_title("RBM")
+
+ax2 = fig.add_subplot(gs[0, 2])
+ax2.scatter(tsneModel_tr[:, 0], tsneModel_tr[:, 1], s=6, c=sad_groundtruth_tr)#[:tsneModel_tr.shape[0]])
+ax2.scatter(tsneModel_tst[:, 0], tsneModel_tst[:, 1], s=6, c=sad_groundtruth_tst, marker='^')#[:tsneModel_tst.shape[0]], marker='^')
+ax2.set_title("TSNE_output (sadness)")
 
 ax4 = fig.add_subplot(gs[1,:])
 ax4.plot(loss_tr)
@@ -752,7 +805,7 @@ ax7.plot(knnAcc)
 ax7.set_title("knn accuracy")
 
 
-fig2 = plt.figure()
+fig2 = plt.figure(figsize=(10, 10), dpi=80)
 fig2.canvas.mpl_connect('pick_event', onpick)
 ax21 = fig2.add_subplot(1,1,1)
 ax21.scatter(globalKullback[:, 0], globalKullback[:, 1],s = 8, c=color,picker=True)
@@ -769,25 +822,38 @@ tsneModel.save_weights(filename)
 filename = directory_name_output +"/summary.txt"
 file = open(filename, 'w')
 file.write("number of samples: " + str(n_samples) + "\ntsne nonparam init: " + nnparam_init + " -perpl: " + str(perplexity) + " -nnpepochs: " + str(n_epochs_nnparam) + "\nbatch" + str(batch_tsne_kullback) + "\nepochs" + str(nb_epoch_tsne_kullback))
-"""file.write("\n\ntraining evaluation:")
+"""
 file.write("\n1) non parametric output and original data(34-Dimensions): " + str(tsneModel_err_tr_nnp_data))
 file.write("\n2) parametric tsne output and original data(34-Dimensions): " + str(tsneModel_err_tr_out_data))
 file.write("\n3) non parametric output and : original data(34-Dimensions)" + str(tsneModel_err_tr_nnp_out))
 file.write("\ntesting evaluation:")
 file.write("\n1) non parametric output and original data(34-Dimensions): " + str(tsneModel_err_tst_nnp_data))
 file.write("\n2) parametric tsne output and original data(34-Dimensions): " + str(tsneModel_err_tst_out_data))
-file.write("\n 3) non parametric output and : original data(34-Dimensions)" + str(tsneModel_err_tst_nnp_out))"""
+file.write("\n3) non parametric output and : original data(34-Dimensions)" + str(tsneModel_err_tst_nnp_out))"""
+if model_id == 0:
+    file.write("kullback loss\n")
+if model_id == 1:
+    file.write("kullback loss, AutoEncoder pretraining\n")
+if model_id == 2:
+    file.write("kullback loss, RBM pretraining\n")
 
-file.write('Total accuracy: %.5f' % total_accuracy)
+if dataset_type == 0:
+    file.write("dataset as concatenation [first, mean(mid), last]\n")
+if dataset_type == 1:
+    file.write("dataset as concatenation [mean var]\n")
+if dataset_type == 2:
+    file.write("dataset as mean\n")
+file.write("\n\ntraining evaluation: ")
+file.write('Total accuracy: %.5f\n' % total_accuracy)
 for i in range(len(genre_dict)):
-    file.write('Genre ' + genre_dict[i] + ' accuracy: %.5f' % class_accuracy[i])
-file.write('angry accuracy: %.5f' % angry_accuracy)
-file.write('erotic accuracy: %.5f' % erotic_accuracy)
-file.write('fear accuracy: %.5f' % fear_accuracy)
-file.write('joy accuracy: %.5f' % joy_accuracy)
-file.write('sad accuracy: %.5f' % sad_accuracy)
-file.write('tender accuracy: %.5f' % tender_accuracy)
-file.write("\ntraining loss: " + str(loss_tr[len(loss_tst)-1]))  #  + ";\ntraining acc: " + str(tsneModel_history.history['acc'][len(tsneModel_history.history['acc'])-1]) +
+    file.write('Genre ' + genre_dict[i] + ' accuracy: %.5f\n' % class_accuracy[i])
+file.write('angry sensitivity: %.5f\n' % evaluations[0][1])
+file.write('erotic sensitivity: %.5f\n' % evaluations[1][1])
+file.write('fear sensitivity: %.5f\n' % evaluations[2][1])
+file.write('joy sensitivity: %.5f\n' % evaluations[3][1])
+file.write('sad sensitivity: %.5f\n' % evaluations[4][1])
+file.write('tender sensitivity: %.5f\n' % evaluations[5][1])
+file.write("training loss: " + str(loss_tr[len(loss_tst)-1]))  #  + ";\ntraining acc: " + str(tsneModel_history.history['acc'][len(tsneModel_history.history['acc'])-1]) +
 file.write("\ntesting loss: " + str(loss_tst[len(loss_tst)-1]))   #  + ";\ntesting acc: " + str(tsneModel_history.history['val_acc'][len(tsneModel_history.history['val_acc'])-1]) )
 file.write('\n' + str(tsneModel.get_config()))
 file.close()
