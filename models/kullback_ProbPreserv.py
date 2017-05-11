@@ -33,7 +33,7 @@ Ntraining_set = 15000
 model_layers = [80,80,500]
 
 batch_tsne_kullback = 1500
-nb_epoch_tsne_kullback = 50
+nb_epoch_tsne_kullback = 30
 
 
 perplexity = 30.0 #30.0
@@ -43,8 +43,8 @@ dropout = 0.01
 
 checkoutEpoch = 1
 
-rbm_batch = 100
-rbm_epochs = 10
+rbm_batch = batch_tsne_kullback
+rbm_epochs = nb_epoch_tsne_kullback
 
 ae_batch = 100
 ae_epochs = 10
@@ -183,6 +183,10 @@ print("data vectorization: done")
 if model_id!=2:
     vectors = (vectors - np.mean(vectors))/np.var(vectors)
     print("dataset normalization: done")
+if model_id == 2:
+    vectors = vectors/np.var(vectors)
+    vectors = vectors/np.amax(vectors)
+
 
 print("training non-parametric tsne ...")
 start = timeit.default_timer()
@@ -258,7 +262,7 @@ if model_id==2:
     final_momentum = 0.9
 
     input_tmp = np.array(training_data)
-    input_tmp= input_tmp/np.amax(input_tmp)
+    #input_tmp= input_tmp/np.amax(input_tmp)
 
     batch_size = rbm_batch
     for i in range(len(H)):
@@ -560,10 +564,10 @@ if model_id==2:
     tsneModel.layers[4].set_weights(pretrained_weights[3])
     #tsneModel.add(Dropout(dropout))
     #tsneModel.add(Dense(2, weights=pretrained_weights[3]))
-    training_data_tsne = (training_data_tsne) / np.amax(training_data_tsne)
-    testing_data= (testing_data) / np.amax(testing_data)
+    """training_data_tsne = (training_data_tsne) / np.amax(training_data_tsne)
+    testing_data = (testing_data) / np.amax(testing_data)
     vectors = (vectors)/np.amax(vectors+1)
-    val_data_tsne = val_data_tsne/np.amax(val_data_tsne)
+    val_data_tsne = val_data_tsne/np.amax(val_data_tsne)"""
 
 tsneModel.compile(optimizer='adam', loss=tsne)
 print("saving model ...")
@@ -622,6 +626,12 @@ tsneModel_tst = tsneModel.predict(testing_data) # 0.31
 
 ######################################################################################################
 globalKullback = tsneModel.predict(vectors)
+
+from sklearn import decomposition
+
+pca = decomposition.PCA(n_components=2)
+pca.fit(globalKullback)
+globalKullback = pca.transform(globalKullback)
 
 ## GENRE
 knn = KNeighborsClassifier(n_neighbors=1)
@@ -757,7 +767,7 @@ if model_id==1:
 if model_id==2:
     axx2 = fig.add_subplot(gs[0, 1])
     axx2.scatter(encoder_RBM_tr[:, 0], encoder_RBM_tr[:, 1], s=6, c=sad_groundtruth_tr)#[:encoder_RBM_tr.shape[0]])
-    axx2.scatter(encoder_RBM_tst[:, 0], encoder_RBM_tst[:, 1], s=6, c=sad_groundtruth_tst,maerker='^')#'[:encoder_RBM_tst.shape[0]],marker='^')
+    axx2.scatter(encoder_RBM_tst[:, 0], encoder_RBM_tst[:, 1], s=6, c=sad_groundtruth_tst, marker='^')#'[:encoder_RBM_tst.shape[0]],marker='^')
     axx2.set_title("RBM")
 
 ax2 = fig.add_subplot(gs[0, 2])
