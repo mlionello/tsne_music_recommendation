@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 from keras.layers import Input, Dense
 from keras.models import Model, Sequential
 import numpy as np
@@ -18,6 +20,7 @@ from keras.layers.normalization import BatchNormalization
 from keras.layers import Dropout
 from generate_json import generate_json
 import random
+plt.ioff()
 
 ####################################################################################################
 #
@@ -213,9 +216,9 @@ if model_id == 2:
 
 print("training non-parametric tsne ...")
 start = timeit.default_timer()
-tsne = manifold.TSNE(n_components=2, init=nnparam_init, random_state=0, n_iter=n_epochs_nnparam, perplexity=perplexity) #epoch to change to 5000
+#tsne = manifold.TSNE(n_components=2, init=nnparam_init, random_state=0, n_iter=n_epochs_nnparam, perplexity=perplexity) #epoch to change to 5000
 #Y = tsne.fit_transform(vectors)
-Y = np.zeros((len(vectors),2))
+#Y = np.zeros((len(vectors),2))
 
 print("\tnon-parametric tsne trained in " + str(timeit.default_timer() - start) + " seconds")
 
@@ -235,14 +238,14 @@ for i in range(vectors.shape[0]):
 training_data = np.array([vectors[(int)(i), :] for i in training_indx])
 print("training_data.shape: " + str(training_data.shape))
 
-training_targets = np.array([Y[(int)(i), :] for i in training_indx])
-print("training_targets.shape: " + str(training_targets.shape))
+#training_targets = np.array([Y[(int)(i), :] for i in training_indx])
+#print("training_targets.shape: " + str(training_targets.shape))
 
 testing_data = np.array([vectors[(int)(i), :] for i in testing_indx])
 print("testing_data.shape: " + str(testing_data.shape))
 
-testing_targets = np.array([Y[(int)(i), :] for i in testing_indx])
-print("testing_targets.shape: " + str(testing_targets.shape))
+#testing_targets = np.array([Y[(int)(i), :] for i in testing_indx])
+#print("testing_targets.shape: " + str(testing_targets.shape))
 
 testing_label = np.array([color[(int)(i)] for i in testing_indx])
 training_label = np.array([color[(int)(i)] for i in training_indx])
@@ -764,7 +767,6 @@ if model_id==2:
 
 ######################################################################################################
 from matplotlib import gridspec
-
 
 def onpick(event):
     ind = event.ind
