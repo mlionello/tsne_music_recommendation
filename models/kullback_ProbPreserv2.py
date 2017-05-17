@@ -27,15 +27,15 @@ plt.ioff()
 #                                   PARAMETERS SETTINGS
 #
 ####################################################################################################
-model_id = 2
+model_id = 1
 dataset_type = 0
 
-n_samples = 50000 #20000
-Ntraining_set = 15000
+n_samples = 5000 #20000
+Ntraining_set = 3000
 
 model_layers = [80,80,500]
 
-batch_tsne_kullback = 1500
+batch_tsne_kullback = 300
 nb_epoch_tsne_kullback = 30
 
 
@@ -49,8 +49,8 @@ checkoutEpoch = 5
 rbm_batch = batch_tsne_kullback
 rbm_epochs = nb_epoch_tsne_kullback
 
-ae_batch = 100
-ae_epochs = 10
+ae_batch = batch_tsne_kullback
+ae_epochs = nb_epoch_tsne_kullback
 
 if (len(sys.argv)>1):
     model_id = (int)(sys.argv[1])
@@ -146,15 +146,15 @@ for row in reader:
     #vectors.append(a)
     if dataset_type==0:
         if len(a)>3:
-            a = np.concatenate((a[0], np.mean(a[1:len(a)-1],axis=0), a[len(a)-1]))
-        else:
-            a= np.concatenate((a[0], a[1], a[2]))
-        angry_groundtruth.append((int)(np.mean([a[12], a[34+12], a[34*2+12]]) >= 5))
-        erotic_groundtruth.append((int)(np.mean([a[13], a[34+13], a[34*2+13]]) >= 5))
-        fear_groundtruth.append((int)(np.mean([a[14], a[34+14], a[34*2+14]]) >= 5))
-        joy_groundtruth.append((int)(np.mean([a[15], a[34+15], a[34*2+15]]) >= 5))
-        sad_groundtruth.append((int)(np.mean([a[16], a[34+16], a[34*2+16]]) >= 5))
-        tender_groundtruth.append((int)(np.mean([a[17], a[34+17], a[34*2+17]]) >= 5))
+            a = np.concatenate((a[0], np.mean(a[1:len(a)-1],axis=0), np.var(a[1:len(a)-1],axis=0), a[len(a)-1]))
+        if len(a) == 3:
+            a = np.concatenate((a[0], a[1], np.zeros(34), a[2]))
+        angry_groundtruth.append((int)(np.mean([a[12], a[34+12], a[34*3+12]]) >= 5))
+        erotic_groundtruth.append((int)(np.mean([a[13], a[34+13], a[34*3+13]]) >= 5))
+        fear_groundtruth.append((int)(np.mean([a[14], a[34+14], a[34*3+14]]) >= 5))
+        joy_groundtruth.append((int)(np.mean([a[15], a[34+15], a[34*3+15]]) >= 5))
+        sad_groundtruth.append((int)(np.mean([a[16], a[34+16], a[34*3+16]]) >= 5))
+        tender_groundtruth.append((int)(np.mean([a[17], a[34+17], a[34*3+17]]) >= 5))
     if dataset_type==1:
         a = np.concatenate((np.mean(a,axis=0),np.var(a,axis=0)))
         angry_groundtruth.append((int)(a[12]>= 5))
@@ -207,11 +207,11 @@ vectors = np.asarray(vectors)
 print("data vectorization: done")
 
 if model_id!=2:
-    vectors = (vectors - np.mean(vectors))/np.var(vectors)
+    vectors = (vectors - np.mean(vectors))/float(np.var(vectors))
     print("dataset normalization: done")
 if model_id == 2:
-    vectors = vectors/np.var(vectors)
-    vectors = vectors/np.amax(vectors)
+    vectors = vectors/float(np.var(vectors))
+    vectors = vectors/float(np.amax(vectors))
 
 
 print("training non-parametric tsne ...")
@@ -305,7 +305,7 @@ if model_id==2:
         ind = np.random.permutation(range(n))
 
         for iter in range(max_iter):
-            print("iter: " + str(iter) + " / " + str(max_iter))
+            #print("iter: " + str(iter) + " / " + str(max_iter))
             if iter <= 5:
                 momentum = initial_momentum
             else:
@@ -314,16 +314,16 @@ if model_id==2:
             while batch < n:
                 if batch + batch_size <= n:
                     vis1 = (input_tmp[ind[batch:min([batch + batch_size - 1, n])], :])
-                    hid1 = 1 / (1 + np.exp(-(np.dot(vis1, W[i]) + (bias_upW[i]))))
+                    hid1 = 1 / ((1 + np.exp(-(np.dot(vis1, W[i]) + (bias_upW[i])))))
                     hid_states = hid1 > (np.random.random(hid1.shape))
-                    vis2 = 1 / (1 + np.exp(-(np.dot(hid_states, np.transpose(W[i])) + (bias_downW[i]))))  # WTF?
+                    vis2 = 1 / ((1 + np.exp(-(np.dot(hid_states, np.transpose(W[i])) + (bias_downW[i])))) ) # WTF?
                     hid2 = 1 / (1 + np.exp(-(np.dot(vis2, W[i]) + (bias_upW[i]))))
 
                     posprods = np.dot(np.transpose(vis1), hid1)
                     negprods = np.dot(np.transpose(vis2), hid2)
-                    deltaW = momentum * deltaW + eta * (((posprods - negprods) / batch_size) - (weight_cost * W[i]))
-                    deltaBias_upW = momentum * deltaBias_upW + (eta / batch_size) * (sum(hid1) - sum(hid2))
-                    deltaBias_downW = momentum * deltaBias_downW + (eta / batch_size) * (sum(vis1) - sum(vis2))
+                    deltaW = momentum * deltaW + eta * (((posprods - negprods) / float(batch_size)) - (weight_cost * W[i]))
+                    deltaBias_upW = momentum * deltaBias_upW + (eta / float(batch_size)) * (sum(hid1) - sum(hid2))
+                    deltaBias_downW = momentum * deltaBias_downW + (eta / float(batch_size)) * (sum(vis1) - sum(vis2))
 
                     W[i] = W[i] + deltaW
                     bias_upW[i] = bias_upW[i] + deltaBias_upW
@@ -402,8 +402,8 @@ if model_id==1:
 def Hbeta(D, beta):
     P = np.exp(-D * beta)
     sumP = np.sum(P)
-    H = np.log(sumP) + beta * np.sum(np.multiply(D, P)) / sumP
-    P = P / sumP
+    H = np.log(sumP) + beta * np.sum(np.multiply(D, P)) / float(sumP)
+    P = P / float(sumP)
     return H, P
 
 
@@ -447,13 +447,13 @@ def x2p(X, u=15, tol=1e-4, print_iter=500, max_tries=50, verbose=0):
                 if np.isinf(betamax):
                     beta[i] *= 2
                 else:
-                    beta[i] = (beta[i] + betamax) / 2
+                    beta[i] = (beta[i] + betamax) / float(2)
             else:
                 betamax = beta[i]
                 if np.isinf(betamin):
                     beta[i] /= 2
                 else:
-                    beta[i] = (beta[i] + betamin) / 2
+                    beta[i] = (beta[i] + betamin) / float(2)
 
             # Recompute the values
             H, thisP = Hbeta(Di, beta[i])
@@ -464,9 +464,9 @@ def x2p(X, u=15, tol=1e-4, print_iter=500, max_tries=50, verbose=0):
         P[i, indices] = thisP
 
     if verbose > 0:
-        print('Mean value of sigma: {}'.format(np.mean(np.sqrt(1 / beta))))
-        print('Minimum value of sigma: {}'.format(np.min(np.sqrt(1 / beta))))
-        print('Maximum value of sigma: {}'.format(np.max(np.sqrt(1 / beta))))
+        print('Mean value of sigma: {}'.format(np.mean(np.sqrt(1 / float(beta)))))
+        print('Minimum value of sigma: {}'.format(np.min(np.sqrt(1 / float(beta)))))
+        print('Maximum value of sigma: {}'.format(np.max(np.sqrt(1 / float(beta)))))
 
     return P, beta
 
@@ -480,14 +480,14 @@ def compute_joint_probabilities(samples, batch_size=batch_tsne_kullback, d=2, pe
 
     # Precompute joint probabilities for all batches
     if verbose > 0: print('Precomputing P-values...')
-    batch_count = int(n / batch_size)
+    batch_count = int(n / float(batch_size))
     P = np.zeros((batch_count, batch_size, batch_size))
     for i, start in enumerate(range(0, n - batch_size + 1, batch_size)):
         curX = samples[start:start + batch_size]  # select batch
         P[i], beta = x2p(curX, perplexity, tol, verbose=verbose)  # compute affinities using fixed perplexity
         P[i][np.isnan(P[i])] = 0  # make sure we don't have NaN's
         P[i] = (P[i] + P[i].T)  # / 2                             # make symmetric
-        P[i] = P[i] / P[i].sum()  # obtain estimation of joint probabilities
+        P[i] = P[i] / float(P[i].sum())  # obtain estimation of joint probabilities
         P[i] = np.maximum(P[i], np.finfo(P[i].dtype).eps)
 
     return P
@@ -503,13 +503,13 @@ def tsne(P, activations):
     eps = K.variable(10e-15)
     sum_act = K.sum(K.square(activations), axis=1)
     Q = K.reshape(sum_act, [-1, 1]) + -2 * K.dot(activations, K.transpose(activations))
-    Q = (sum_act + Q) / v
-    Q = K.pow(1 + Q, -(v + 1) / 2)
+    Q = (sum_act + Q) / float(v)
+    Q = K.pow(1 + Q, -(v + 1) / float(2))
     Q *= K.variable(1 - np.eye(n))
-    Q /= K.sum(Q)
+    Q /= (K.sum(Q))
     Q = K.maximum(Q, eps)
     C = K.log((P + eps) / (Q + eps))
-    C = K.sum(P * C)/n
+    C = K.sum(P * C)/float(n)
     return C
 
 
@@ -626,7 +626,7 @@ for i in range(nb_epoch_tsne_kullback):
         knn.fit(tsneModel_tr, sad_groundtruth_tr_shuffle)
         predicted = knn.predict(tsneModel_tst)
         con_mat = confusion_matrix(sad_groundtruth_tst, predicted, [1, 0])
-        sad_sens = con_mat[0,0]/np.sum(con_mat[0,:]) #sensitivity
+        sad_sens = con_mat[0,0]/float(np.sum(con_mat[0,:])) #sensitivity
         knn.fit(tsneModel_tr, genre_groundtruth_tr_shuffle)
         predicted = knn.predict(tsneModel_tst)
         con_mat = confusion_matrix(genre_groundtruth_tst, predicted,
@@ -685,14 +685,14 @@ def maccuracy(groundtruth_tr,groundtruth_tst):
     knn.fit(tsneModel_tr, groundtruth_tr)
     predicted = knn.predict(tsneModel_tst)
     con_mat = confusion_matrix(groundtruth_tst, predicted, [1, 0])
-    output = con_mat[0, 0] / np.sum(con_mat[0, :])
+    output = con_mat[0, 0] / float(np.sum(con_mat[0, :]))
     #print(con_mat)
 
     knn = KNeighborsClassifier(n_neighbors=1)
     knn.fit(tsneModel_tr0, groundtruth_tr)
     predicted = knn.predict(tsneModel_tst0)
     con_mat = confusion_matrix(groundtruth_tst, predicted, [1, 0])
-    output0 = con_mat[0, 0] / np.sum(con_mat[0, :])
+    output0 = con_mat[0, 0] / float(np.sum(con_mat[0, :]))
     return [output0, output]
 
 emotion_names=['angry','erotic','fear','joy','sad','tender']

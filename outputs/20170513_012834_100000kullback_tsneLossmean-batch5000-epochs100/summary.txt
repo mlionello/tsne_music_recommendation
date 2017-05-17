@@ -1,0 +1,35 @@
+number of samples: 100000
+tsne nonparam init: pca -perpl: 30.0 -nnpepochs: 200
+batch5000
+epochs100kullback loss
+dataset as mean
+
+
+training evaluation: Total accuracy: 0.35180
+Genre Blues accuracy: 0.07556
+Genre Classical accuracy: 0.16089
+Genre Country accuracy: 0.14180
+Genre Electronic accuracy: 0.68906
+Genre Entertainment accuracy: 0.10888
+Genre Folk accuracy: 0.19270
+Genre Gospel accuracy: 0.04608
+Genre Hip Hop accuracy: 0.24221
+Genre International accuracy: 0.02593
+Genre Jazz accuracy: 0.49471
+Genre Latin accuracy: 0.12161
+Genre Metal accuracy: 0.39587
+Genre New Age accuracy: 0.06818
+Genre Pop accuracy: 0.17663
+Genre Reggae accuracy: 0.12187
+Genre Rock accuracy: 0.38500
+Genre Soul / RnB accuracy: 0.14221
+Genre Soundtrack/Score accuracy: 0.09422
+angry sensitivity: 0.72769
+erotic sensitivity: 0.46740
+fear sensitivity: 0.80706
+joy sensitivity: 0.31933
+sad sensitivity: 0.73278
+tender sensitivity: 0.80939
+training loss: 0.000463445558645
+testing loss: 0.00046303292523
+[{'class_name': 'Dense', 'config': {'W_constraint': None, 'b_constraint': None, 'name': 'dense_1', 'output_dim': 80, 'activity_regularizer': None, 'trainable': True, 'init': 'glorot_uniform', 'bias': True, 'input_dtype': 'float32', 'input_dim': 34, 'b_regularizer': None, 'W_regularizer': None, 'activation': 'relu', 'batch_input_shape': (None, 34)}}, {'class_name': 'Dense', 'config': {'W_constraint': None, 'b_constraint': None, 'name': 'dense_2', 'activity_regularizer': None, 'trainable': True, 'init': 'glorot_uniform', 'bias': True, 'input_dim': 80, 'b_regularizer': None, 'W_regularizer': None, 'activation': 'relu', 'output_dim': 80}}, {'class_name': 'Dense', 'config': {'W_constraint': None, 'b_constraint': None, 'name': 'dense_3', 'activity_regularizer': None, 'trainable': True, 'init': 'glorot_uniform', 'bias': True, 'input_dim': 80, 'b_regularizer': None, 'W_regularizer': None, 'activation': 'relu', 'output_dim': 500}}, {'class_name': 'Dropout', 'config': {'p': 0.01, 'trainable': True, 'name': 'dropout_1'}}, {'class_name': 'Dense', 'config': {'W_constraint': None, 'b_constraint': None, 'name': 'dense_4', 'activity_regularizer': None, 'trainable': True, 'init': 'glorot_uniform', 'bias': True, 'input_dim': 500, 'b_regularizer': None, 'W_regularizer': None, 'activation': 'linear', 'output_dim': 2}}]
