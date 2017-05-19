@@ -31,16 +31,19 @@
     <?php
 
 
-      if(empty($_GET["folder"])) $folder="20170502_104427_5000kullback_tsneLoss-batch80-epochs150";
-      else $folder=$_GET["folder"];
-      echo '<script type="text/javascript" src="../outputs/'.$folder.'/dataset.json"></script>';
+      $word=strtolower($_GET["word"]);
+      //echo '<script type="text/javascript" src="../outputs/'.$folder.'/dataset.json"></script>';
       $a=array();
-      $b="adele";
-      $file="../outputs/".$folder."/dataset.json";
+      //$b="adele";
+      $file="dataset_auto_mean.json";
       $json=json_decode(file_get_contents($file), true);
-      for($i=0;$i<sizeof($json);$i++) if((strrpos(strtolower($json[$i]['artist']),$b))||(strrpos(strtolower($json[$i]['title']),$b))) array_push($a,$json[$i]);
-      shuffle($a);
-      array_slice($a,1000);
+      if($word){
+        for($i=0;$i<sizeof($json);$i++) if((strrpos(strtolower($json[$i]['artist']),$word)!==false)||(strrpos(strtolower($json[$i]['title']),$word)!==false)) array_push($a,$json[$i]);
+        $json=$a;
+      }
+      shuffle($json);
+      $json=array_slice($json,0,1000);
+
       ?>
 
     <!--script>
@@ -63,8 +66,10 @@
       var size=6;
       var colorw="#a7adba";
       var mzoom=100;
-      var rangex=0;
-      var rangey=0;
+      var mix=-44;
+      var mnx=52;
+      var miy=-22;
+      var mny=29;
       var z1;
       var z2;
       var one;
@@ -77,9 +82,12 @@
       var line=false;
       var playlistsong;
       var stop=false;
+      var previous=0;
+      var now=0;
+      var kind;
+      var s;
 
       var songs=<?php echo json_encode($json, JSON_PRETTY_PRINT) ?>;
-      alert(songs.length);
       var data=songs;
 
       function init(){
@@ -90,35 +98,47 @@
             z1=1;
             z2=1;
             stage.enableMouseOver(20);
-            for(i=0;i<songs.length;i++){
+            /*for(i=0;i<songs.length;i++){
               if(Math.abs(songs[i].x)>rangex) rangex=Math.ceil(Math.abs(songs[i].x));
               if(Math.abs(songs[i].y)>rangey) rangey=Math.ceil(Math.abs(songs[i].y));
-            }
+            }*/
           }
+          document.getElementById("drlist").style.color="#777777";
+          document.getElementById("drlist").style.width="180px";
+          document.getElementById("drlist").value="Create Playlist";
+          document.getElementById("previous").style.visibility="hidden";
+          document.getElementById("next").style.visibility="hidden";
+          document.getElementById("previous").style.width="10px";
+          document.getElementById("next").style.width="10px";
           stage.removeAllChildren();
-          var kind=document.getElementById("dgenre").value;
+          kind=document.getElementById("dgenre").value;
           var one=document.getElementById("coloruno").value.toLowerCase();
           var two=document.getElementById("colordue").value.toLowerCase();
           var three=document.getElementById("colortre").value.toLowerCase();
           n=1000;
           songs=data.slice(0,n);
+          if(songs.length<200){
+            mzoom=40;
+          }
           for(i=0;i<songs.length;i++){
             var circle = new createjs.Shape();
             var bound = new createjs.Shape();
             var text = new createjs.Text("Artist: "+songs[i].artist+"\nTitle: "+songs[i].title, "40px Arial", "#777777");
-            circle.x = ((songs[i].x+rangex)*(demoCanvas.width)/(2*rangex));
-            circle.y = ((songs[i].y+rangey)*(demoCanvas.height-100)/(2*rangey));
+            circle.x = ((songs[i].x+Math.abs(mix))*(demoCanvas.width)/(mnx-mix));
+            circle.y = ((songs[i].y+Math.abs(miy))*(demoCanvas.height)/(mny-miy));
             bound.x= circle.x;
             bound.y= circle.y;
             text.x=circle.x+1;
             text.y=circle.y;
             text.textBaseline = "alphabetic";
             text.alpha=0;
-            if(stage.scaleX>0.1*mzoom) text.alpha=1;
+            s=10;
+            if(songs.length<200) s=2;
+            if(stage.scaleX>s) text.alpha=1;
             if(stage.scaleX>2.10) bound.alpha=0;
-            var c=(songs[i][one]+1)/2;
-            var m=(songs[i][two]+1)/2;
-            var y=(songs[i][three]+1)/2;
+            var c=Math.tanh(songs[i][one]+1);
+            var m=Math.tanh(songs[i][two]+1);
+            var y=Math.tanh(songs[i][three]+1);
             var k=0;//(songs[i].Angry)/7;
             var a=1;
             var r= Math.round(255*(1 - Math.min(1, c * (1 - k) + k)));
@@ -126,8 +146,8 @@
             var b= Math.round(255*(1 - Math.min(1, y * (1 - k) + k)));
             //alert("r: "+r+" g: "+g+" b: "+b+" a: "+a);
 
-            var e=Math.pow(Math.round(songs[i][kind]+1)*2,2);
-            circle.graphics.beginStroke("#777777").beginFill("rgba("+r+","+g+","+b+","+a+")").drawCircle(0, 0, 12+e);
+            var e=Math.tanh(Math.pow(songs[i][kind]+1,3))*20+Math.pow((songs[i][kind]+1),3);
+            circle.graphics.beginStroke("#777777").beginFill("rgba("+r+","+g+","+b+","+a+")").drawCircle(0, 0, 16+e);
             bound.graphics.beginRadialGradientFill(["rgba("+r+","+g+","+b+",0.1)","rgba("+r+","+g+","+b+",0)"],[0, 1],0,0,10,0,0,100).drawCircle(0,0,100);
             text.shadow = new createjs.Shadow("rgba("+r+","+g+","+b+",0.2)", 5, 5, 10);
             circle.id=i;
@@ -151,13 +171,15 @@
               event.target.scaleY/=1.8;
               stage.update();
             });
-            circle.addEventListener("click", function(event) {
-              var title=songs[event.target.id].title;
-              var artist=songs[event.target.id].artist;
-              alert("title: "+title+"\nartist: "+artist);
-              //document.getElementById("player").setAttribute("src",'https://embed.spotify.com/?uri=spotify%3Atrack%3A'+song+'&theme=white');
-              //document.getElementsByClassName("footer")[0].style.backgroundColor="#f4d5fa";
+            circle.addEventListener("click", function(event){
+              if(previous.id!=event.target.id){
+                playing(event.target);
+              }
+              for(i=0;i<playlistsong.length/3;i++){
+                if(playlistsong[3*i+2]==event.target.id) now=i;
+              }
             });
+            circle.name="rgba("+r+","+g+","+b+",1)";
             circle.scaleX/=stage.scaleX;
             circle.scaleY/=stage.scaleY;
             bound.scaleX/=stage.scaleX;
@@ -227,27 +249,97 @@
               for(i=songs.length;i<stage.numChildren;i=i+1){
                 stage.removeChildAt(3*songs.length);
               }
-              //alert(playlistsong);
+              var note="Your playlist:\n\n";
+              for(i=0;i<playlistsong.length/3;i++){
+                var music=songs[playlistsong[3*i+2]];
+                note=note+(i+1)+". "+music.artist+" - "+music.title+"\n";
+              }
+              alert(note);
               shape = new createjs.Shape();
               stage.addChild(shape);
               for(i=0;i<playlistsong.length-4;i=i+3){
                 shape.graphics.beginStroke(colorw).setStrokeStyle(size, "round",0,10,true).moveTo(playlistsong[i],playlistsong[i+1]).lineTo(playlistsong[i+3],playlistsong[i+4]);
               }
-              stage.update();
+              now=0;
+              playing(stage.getChildAt(songs.length+2*playlistsong[2]));
               init();
             });
           });
         }
+        if(first) playing(stage.getChildAt(3*songs.length-2));
         stage.update();
         first=false;
       }
 
       function playlist(){
-        playlistmode=true;
-        document.getElementById("drlist").style.color="#fc3468";
-        playlistsong=new Array();
-        stage.removeAllEventListeners("stagemousedown");
-        init();
+        if(!playlistmode){
+          playlistmode=true;
+          document.getElementById("drlist").style.color="#fc3468";
+          document.getElementById("drlist").style.width="90px";
+          document.getElementById("drlist").value="Playlist";
+          document.getElementById("previous").style.width="80px";
+          document.getElementById("next").style.width="80px";
+          document.getElementById("previous").style.visibility="visible";
+          document.getElementById("next").style.visibility="visible";
+          playlistsong=new Array();
+          stage.removeAllEventListeners("stagemousedown");
+          init();
+        }
+        else{
+          playlistmode=false;
+          stage.removeAllEventListeners("stagemousemove");
+          stage.removeAllEventListeners("stagemousedown");
+          line=false;
+          document.getElementById("drlist").style.color="#777777";
+          oldX=0;
+          oldY=0;
+          now=0;
+          stop=true;
+          for(i=songs.length;i<stage.numChildren;i=i+1){
+            stage.removeChildAt(3*songs.length);
+          }
+          document.getElementById("drlist").style.color="#777777";
+          document.getElementById("drlist").style.width="180px";
+          document.getElementById("drlist").value="Create Playlist";
+          document.getElementById("previous").style.visibility="hidden";
+          document.getElementById("next").style.visibility="hidden";
+          document.getElementById("previous").style.width="10px";
+          document.getElementById("next").style.width="10px";
+          playlistsong=new Array();
+          init();
+        }
+      }
+
+      function prec(){
+        if(now){
+          playing(stage.getChildAt(songs.length+2*playlistsong[3*(now-1)+2]));
+          now--;
+        }
+      }
+
+      function next(){
+        if(now<(playlistsong.length/3-1)){
+          playing(stage.getChildAt(songs.length+2*playlistsong[3*(now+1)+2]));
+          now++;
+        }
+      }
+
+      function playing(s){
+        if(!first) document.getElementById("player").setAttribute("src",'https://embed.spotify.com/?uri=spotify%3Atrack%3A'+songs[s.id]["spotifyID"]+'&theme=white');
+        e=Math.tanh(Math.pow(songs[s.id][kind]+1,3))*20+Math.pow((songs[s.id][kind]+1),3);
+        s.graphics.clear().beginStroke(s.name).beginFill("#ffffff").drawCircle(0, 0, 16+e).endFill();
+        s.scaleX*=1.8;
+        s.scaleY*=1.8;
+        if(previous){
+          var color=stage.getChildAt(songs.length+2*previous.id).name;
+          e=Math.tanh(Math.pow(songs[previous.id][kind]+1,3))*20+Math.pow((songs[previous.id][kind]+1),3);
+          stage.getChildAt(songs.length+2*previous.id).graphics.beginStroke("#777777").beginFill(color).drawCircle(0,0,16+e).endFill();
+          stage.getChildAt(songs.length+2*previous.id).scaleX/=1.8;
+          stage.getChildAt(songs.length+2*previous.id).scaleY/=1.8;
+          stage.update();
+        }
+        previous=s;
+        stage.update();
       }
 
       function MouseWheelHandler(e) {
@@ -263,6 +355,10 @@
               //the larger the value of z2 the faster the speed
           		z1=1/1.11;
               z2=1.11;
+              if(songs.length<200){
+                z1=1/1.06;
+                z2=1.06;
+              }
               b=0.08;
             }
           }
@@ -275,6 +371,10 @@
             else{
           		z1=1.11;
               z2=1/1.11;
+              if(songs.length<200){
+                z1=1.06;
+                z2=1/1.06;
+              }
               b=-0.08;
             }
           }
@@ -284,7 +384,7 @@
           stage.x=stage.mouseX;
           stage.y=stage.mouseY;
           stage.scaleX=stage.scaleY*=z2;
-          if(stage.scaleX>0.1*mzoom) for(i=0;i<songs.length;i++){
+          if(stage.scaleX>s) for(i=0;i<songs.length;i++){
             stage.getChildAt(2*i+songs.length+1).alpha+=b;
             if(stage.getChildAt(2*i+songs.length+1).alpha>1) stage.getChildAt(2*i+songs.length+1).alpha=1;
             if(stage.getChildAt(2*i+songs.length+1).alpha<0) stage.getChildAt(2*i+songs.length+1).alpha=0;
@@ -299,6 +399,8 @@
             for(i=0;i<stage.numChildren-1;i++){
               stage.getChildAt(i).scaleX=1;
               stage.getChildAt(i).scaleY=1;
+              previous.scaleX=1.8;
+              previous.scaleY=1.8;
             }
           }
           if((stage.scaleX>=mzoom)||(stage.scaleY>=mzoom)){
@@ -308,6 +410,8 @@
             for(i=0;i<3*songs.length;i++){
               stage.getChildAt(i).scaleX=1/mzoom;
               stage.getChildAt(i).scaleY=1/mzoom;
+              previous.scaleX=1.8/mzoom;
+              previous.scaleY=1.8/mzoom;
             }
           }
           if(!resizing) for(i=0;i<3*songs.length;i++){
@@ -342,27 +446,28 @@
     <!-- Fixed navbar -->
     <nav class="navbar navbar-default navbar-fixed-top" background-color=#b3cde0>
       <div class="container">
-        <a class="navbar-brand" href="#">Music Visualisation with t-sne</a>
+        <a class="navbar-brand" href="?word=">Music Visualisation with t-sne</a>
         <form action="<?php $_PHP_SELF ?>" method="GET">
-            <input class="drop2" type="submit" value="Draw file"/>
-            <input class="drop2" type="text" name="folder" value=<?php echo "'".$_GET["folder"]."'"?>/>
-            <p style="float:right; margin-top:15px; margin-right:10px"> Choose folder: </p>
+            <input class="drop2" type="submit" value="Search"/>
+            <input class="drop0" type="text" name="word" value=<?php echo "'".$_GET["word"]."'"?>/>
+            <p style="float:right; margin-top:15px; margin-right:10px"> Type artist or word: </p>
         </form>
       </div>
     </nav>
 
-
     <!-- Begin page content -->
     <div class="container">
-      <canvas id="demoCanvas" width="4000" height="1750"> </canvas>
+      <canvas id="demoCanvas" width="4000" height="1560"> </canvas>
     </div>
 
     <footer class="footer">
       <div class="explorer">
         <div class="vertical">
-          <iframe id="player" src="https://embed.spotify.com/?uri=spotify%3Atrack%3A6eZpo3Bp44hOkG2d1v8s5L&theme=white"frameborder="0" allowtransparency="true"></iframe>
+          <iframe id="player" src="https://embed.spotify.com/?uri=spotify%3Atrack%3A<?php echo $json[0]['spotifyID'] ?>&theme=white"frameborder="0" allowtransparency="true"></iframe>
         </div>
-        <input id="drlist" class="drop" type="button" onclick="playlist()" value="Create a playlist">
+        <input id="drlist" class="drop" type="button" onclick="playlist()" value="Create playlist">
+        <input id="previous" class="manager" style="visibility:hidden" type="button" onclick="prec()" value="Previous">
+        <input id="next" class="manager" style="visibility:hidden" type="button" onclick="next()" value="Next">
         <div style="min-width:540px; overflow: hidden">
           <select class="drop1" id="coloruno" style="color: cyan; text-shadow: 1px 0 2px #777777;" onchange="init()">
             <option value"sad">Sad</option>

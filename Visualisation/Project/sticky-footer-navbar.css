@@ -54,13 +54,50 @@ body > .container {
   max-height: 180px;
 }
 
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content/Box */
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%; /* Could be more or less, depending on screen size */
+}
+
+/* The Close Button */
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
 .drop{
   width:180px;
   height:30px;
 
   position:relative;
   float:left;
-  margin: 30px 0;
+  margin: 30px 0 30px 10px;
   background-color: #ffffff;
   color: #777777;
   outline: none;
@@ -69,6 +106,23 @@ body > .container {
   -moz-appearance: none;
   -moz-outline: none;
 
+  border: 0;
+}
+
+.manager{
+  width:10px;
+  height:30px;
+
+  position:relative;
+  float:left;
+  margin: 30px 0 30px 10px;
+  background-color: #ffffff;
+  color: #777777;
+  outline: none;
+  border-radius: 7px;
+  -webkit-border-radius:7px;
+  -moz-appearance: none;
+  -moz-outline: none;
 
   border: 0;
 }
@@ -90,17 +144,19 @@ body > .container {
   border: 0;
 }
 
-.drop:hover, .drop1:hover, .drop2:hover{
+.drop:hover, .drop1:hover, .drop2:hover, .manager:hover{
   background-color: #f5f5f5;
-  -webkit-transition: all 80ms linear;
-  -moz-transition: all 80ms linear;
-  -ms-transition: all 80ms linear;
-  -o-transition: all 80ms linear;
-  transition: all 80ms linear;
 }
 
+.drop, .drop1, .drop2, .manager{
+  -webkit-transition: all 400ms ease;
+  -moz-transition: all 400ms ease;
+  -ms-transition: all 400ms ease;
+  -o-transition: all 400ms ease;
+  transition: all 400ms ease;
+}
 
-.drop2{
+.drop2, .drop0{
   width:80px;
   height:30px;
 
