@@ -27,16 +27,17 @@ plt.ioff()
 #                                   PARAMETERS SETTINGS
 #
 ####################################################################################################
-model_id = 1
-dataset_type = 0
+model_id = 2 # no pretraining; autoencoders; RBM
+dataset_type = 0 # [first, mean, var, last], [mean, var], [mean]
+onlyEmoGenr = 2 # all dataset, only emotions, only genres
 
-n_samples = 5000 #20000
-Ntraining_set = 3000
+n_samples = 12000 #20000
+Ntraining_set = 7500
 
 model_layers = [80,80,500]
 
 batch_tsne_kullback = 300
-nb_epoch_tsne_kullback = 30
+nb_epoch_tsne_kullback = 10
 
 
 perplexity = 30.0 #30.0
@@ -44,7 +45,7 @@ n_epochs_nnparam = 200 #2000
 nnparam_init='pca' #'pca'
 dropout = 0.01
 
-checkoutEpoch = 5
+checkoutEpoch = 2
 
 rbm_batch = batch_tsne_kullback
 rbm_epochs = nb_epoch_tsne_kullback
@@ -55,21 +56,41 @@ ae_epochs = nb_epoch_tsne_kullback
 if (len(sys.argv)>1):
     model_id = (int)(sys.argv[1])
     dataset_type = (int)(sys.argv[2])
-    n_samples = (int)(sys.argv[3])
-    Ntraining_set = (int)(sys.argv[4])
-    batch_tsne_kullback = (int)(sys.argv[5])
-    nb_epoch_tsne_kullback = (int)(sys.argv[6])
+    onlyEmoGenr = (int)(sys.argv[3])
+    n_samples = (int)(sys.argv[4])
+    Ntraining_set = (int)(sys.argv[5])
+    batch_tsne_kullback = (int)(sys.argv[6])
+    nb_epoch_tsne_kullback = (int)(sys.argv[7])
+
 """
 # testing bugs:
-0 0 10000 3000 500 10
-1 0 10000 3000 500 10
-2 0 10000 3000 500 10
-0 1 10000 3000 500 10
-1 1 10000 3000 500 10
-2 1 10000 3000 500 10
-0 2 10000 3000 500 10
-1 2 10000 3000 500 10
-2 2 10000 3000 500 10
+python3 kullback_ProbPreserv2.py 0 0 0 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 1 0 0 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 2 0 0 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 0 1 0 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 1 1 0 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 2 1 0 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 0 2 0 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 1 2 0 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 2 2 0 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 0 0 1 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 1 0 1 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 2 0 1 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 0 1 1 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 1 1 1 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 2 1 1 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 0 2 1 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 1 2 1 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 2 2 1 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 0 0 2 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 1 0 2 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 2 0 2 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 0 1 2 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 1 1 2 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 2 1 2 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 0 2 2 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 1 2 2 5000 3000 300 10;
+python3 kullback_ProbPreserv2.py 2 2 2 5000 3000 300 10;
 # starting hard training
 0 0 170000 70000 5000 300
 1 0 170000 70000 5000 300
@@ -82,7 +103,7 @@ if (len(sys.argv)>1):
 2 2 170000 70000 5000 300
 """
 
-if (len(sys.argv)!=1 and len(sys.argv)!=7):
+if (len(sys.argv)!=1 and len(sys.argv)!=8):
     print("number of arguments not valid: " + str(len(sys.argv)))
     exit()
 
@@ -104,6 +125,13 @@ if dataset_type==1:
 if dataset_type==2:
     print("dataset as mean")
 
+if onlyEmoGenr == 0:
+    print("_all datasetT")
+if onlyEmoGenr == 1:
+    print("_only_emotions")
+if onlyEmoGenr == 2:
+    print("_only_genres")
+
 print("")
 ####################################################################################################
 
@@ -119,6 +147,21 @@ sad_groundtruth = []
 tender_groundtruth = []
 erotic_groundtruth = []
 fear_groundtruth = []
+blues_groundtruth = []
+country_groundtruth = []
+easy_groundtruth = []
+electronica_groundtruth = []
+folk_groundtruth = []
+hiphop_groundtruth = []
+jazz_groundtruth = []
+latin_groundtruth = []
+newage_groundtruth = []
+pop_groundtruth = []
+rnbsoul_groundtruth = []
+rock_groundtruth = []
+gospel_groundtruth = []
+reggae_groundtruth = []
+world_groundtruth = []
 print("loading data...")
 start = timeit.default_timer()
 j = 0
@@ -149,28 +192,76 @@ for row in reader:
             a = np.concatenate((a[0], np.mean(a[1:len(a)-1],axis=0), np.var(a[1:len(a)-1],axis=0), a[len(a)-1]))
         if len(a) == 3:
             a = np.concatenate((a[0], a[1], np.zeros(34), a[2]))
-        angry_groundtruth.append((int)(np.mean([a[12], a[34+12], a[34*3+12]]) >= 5))
-        erotic_groundtruth.append((int)(np.mean([a[13], a[34+13], a[34*3+13]]) >= 5))
-        fear_groundtruth.append((int)(np.mean([a[14], a[34+14], a[34*3+14]]) >= 5))
-        joy_groundtruth.append((int)(np.mean([a[15], a[34+15], a[34*3+15]]) >= 5))
-        sad_groundtruth.append((int)(np.mean([a[16], a[34+16], a[34*3+16]]) >= 5))
-        tender_groundtruth.append((int)(np.mean([a[17], a[34+17], a[34*3+17]]) >= 5))
+        angry_groundtruth.append((int)(np.mean([a[12], a[34+12], a[34*3+12]]) > 5))
+        erotic_groundtruth.append((int)(np.mean([a[13], a[34+13], a[34*3+13]]) > 5))
+        fear_groundtruth.append((int)(np.mean([a[14], a[34+14], a[34*3+14]]) > 5))
+        joy_groundtruth.append((int)(np.mean([a[15], a[34+15], a[34*3+15]]) > 5))
+        sad_groundtruth.append((int)(np.mean([a[16], a[34+16], a[34*3+16]]) > 5))
+        tender_groundtruth.append((int)(np.mean([a[17], a[34+17], a[34*3+17]]) > 5))
+        #'Blues', 'Country', 'EasyListening', 'Electronica', 'Folk', 'HipHopUrban', 'Jazz', 'Latin', 'NewAge', 'Pop', 'RnBSoul', 'Rock, ,'Gospel','Reggae','World',
+        blues_groundtruth.append((int)(np.mean([a[0], a[34+0], a[34*3+0]]) > 5))
+        country_groundtruth.append((int)(np.mean([a[1], a[34+1], a[34*3+1]]) > 5))
+        easy_groundtruth.append((int)(np.mean([a[2], a[34+2], a[34*3+2]]) > 5))
+        electronica_groundtruth.append((int)(np.mean([a[3], a[34+3], a[34*3+3]]) > 5))
+        folk_groundtruth.append((int)(np.mean([a[4], a[34+4], a[34*3+4]]) > 5))
+        hiphop_groundtruth.append((int)(np.mean([a[5], a[34+5], a[34*3+5]]) > 5))
+        jazz_groundtruth.append((int)(np.mean([a[6], a[34+6], a[34*3+6]]) > 5))
+        latin_groundtruth.append((int)(np.mean([a[7], a[34+7], a[34*3+7]]) > 5))
+        newage_groundtruth.append((int)(np.mean([a[8], a[34+8], a[34*3+8]]) > 5))
+        pop_groundtruth.append((int)(np.mean([a[9], a[34+9], a[34*3+9]]) > 5))
+        rnbsoul_groundtruth.append((int)(np.mean([a[10], a[34+10], a[34*3+10]]) > 5))
+        rock_groundtruth.append((int)(np.mean([a[11], a[34+11], a[34*3+11]]) > 5))
+        gospel_groundtruth.append((int)(np.mean([a[18], a[34+18], a[34*3+18]]) > 5))
+        reggae_groundtruth.append((int)(np.mean([a[19], a[34+19], a[34*3+19]]) > 5))
+        world_groundtruth.append((int)(np.mean([a[20], a[34+20], a[34*3+20]]) > 5))
     if dataset_type==1:
         a = np.concatenate((np.mean(a,axis=0),np.var(a,axis=0)))
-        angry_groundtruth.append((int)(a[12]>= 5))
-        erotic_groundtruth.append((int)(a[13] >= 5))
-        fear_groundtruth.append((int)(a[14] >= 5))
-        joy_groundtruth.append((int)(a[15] >= 5))
-        sad_groundtruth.append((int)(a[16] >= 5))
-        tender_groundtruth.append((int)(a[17] >= 5))
+        angry_groundtruth.append((int)(a[12]> 5))
+        erotic_groundtruth.append((int)(a[13] > 5))
+        fear_groundtruth.append((int)(a[14] > 5))
+        joy_groundtruth.append((int)(a[15] > 5))
+        sad_groundtruth.append((int)(a[16] > 5))
+        tender_groundtruth.append((int)(a[17] > 5))
+        #'Blues', 'Country', 'EasyListening', 'Electronica', 'Folk', 'HipHopUrban', 'Jazz', 'Latin', 'NewAge', 'Pop', 'RnBSoul', 'Rock, ,'Gospel','Reggae','World',
+        blues_groundtruth.append((int)(a[0] > 5))
+        country_groundtruth.append((int)(a[1] > 5))
+        easy_groundtruth.append((int)(a[2] > 5))
+        electronica_groundtruth.append((int)(a[3] > 5))
+        folk_groundtruth.append((int)(a[4] > 5))
+        hiphop_groundtruth.append((int)(a[5] > 5))
+        jazz_groundtruth.append((int)(a[6] > 5))
+        latin_groundtruth.append((int)(a[7] > 5))
+        newage_groundtruth.append((int)(a[8] > 5))
+        pop_groundtruth.append((int)(a[9] > 5))
+        rnbsoul_groundtruth.append((int)(a[10] > 5))
+        rock_groundtruth.append((int)(a[11] > 5))
+        gospel_groundtruth.append((int)(a[18] > 5))
+        reggae_groundtruth.append((int)(a[19] > 5))
+        world_groundtruth.append((int)(a[20] > 5))
     if dataset_type==2:
         a = np.mean(a, axis=0)
-        angry_groundtruth.append((int)(a[12]>= 5))
-        erotic_groundtruth.append((int)(a[13] >= 5))
-        fear_groundtruth.append((int)(a[14] >= 5))
-        joy_groundtruth.append((int)(a[15] >= 5))
-        sad_groundtruth.append((int)(a[16] >= 5))
-        tender_groundtruth.append((int)(a[17] >= 5))
+        angry_groundtruth.append((int)(a[12]> 5))
+        erotic_groundtruth.append((int)(a[13] > 5))
+        fear_groundtruth.append((int)(a[14] > 5))
+        joy_groundtruth.append((int)(a[15] > 5))
+        sad_groundtruth.append((int)(a[16] > 5))
+        tender_groundtruth.append((int)(a[17] > 5))
+        #'Blues', 'Country', 'EasyListening', 'Electronica', 'Folk', 'HipHopUrban', 'Jazz', 'Latin', 'NewAge', 'Pop', 'RnBSoul', 'Rock, ,'Gospel','Reggae','World',
+        blues_groundtruth.append((int)(a[0] > 5))
+        country_groundtruth.append((int)(a[1] > 5))
+        easy_groundtruth.append((int)(a[2] > 5))
+        electronica_groundtruth.append((int)(a[3] > 5))
+        folk_groundtruth.append((int)(a[4] > 5))
+        hiphop_groundtruth.append((int)(a[5] > 5))
+        jazz_groundtruth.append((int)(a[6] > 5))
+        latin_groundtruth.append((int)(a[7] > 5))
+        newage_groundtruth.append((int)(a[8] > 5))
+        pop_groundtruth.append((int)(a[9] > 5))
+        rnbsoul_groundtruth.append((int)(a[10] > 5))
+        rock_groundtruth.append((int)(a[11] > 5))
+        gospel_groundtruth.append((int)(a[18] > 5))
+        reggae_groundtruth.append((int)(a[19] > 5))
+        world_groundtruth.append((int)(a[20] > 5))
     vectors.append(a)
     j = j + 1
 
@@ -180,6 +271,21 @@ fear_groundtruth= np.asarray(fear_groundtruth)
 joy_groundtruth= np.asarray(joy_groundtruth)
 sad_groundtruth= np.asarray(sad_groundtruth)
 tender_groundtruth= np.asarray(tender_groundtruth)
+blues_groundtruth = np.asarray(blues_groundtruth)
+country_groundtruth = np.asarray(country_groundtruth)
+easy_groundtruth = np.asarray(easy_groundtruth)
+electronica_groundtruth = np.asarray(electronica_groundtruth)
+folk_groundtruth = np.asarray(folk_groundtruth)
+hiphop_groundtruth = np.asarray(hiphop_groundtruth)
+jazz_groundtruth = np.asarray(jazz_groundtruth)
+latin_groundtruth = np.asarray(latin_groundtruth)
+newage_groundtruth = np.asarray(newage_groundtruth)
+pop_groundtruth =np.asarray(pop_groundtruth)
+rnbsoul_groundtruth =np.asarray(rnbsoul_groundtruth)
+rock_groundtruth =np.asarray(rock_groundtruth)
+gospel_groundtruth = np.asarray(gospel_groundtruth)
+reggae_groundtruth = np.asarray(reggae_groundtruth)
+world_groundtruth = np.asarray(world_groundtruth)
 
 genre_dict = np.asarray(genre_groundtruth)
 genre_dict = np.unique(genre_dict)
@@ -205,13 +311,26 @@ for i in range(len(data)):
 
 vectors = np.asarray(vectors)
 print("data vectorization: done")
+training_indx = np.asarray(random.sample(range(1,vectors.shape[0]-1), Ntraining_set))
+testing_indx = np.zeros(vectors.shape[0] - training_indx.shape[0])
+j = 0
+for i in range(vectors.shape[0]):
+    if i in training_indx:
+        continue
+    else:
+        testing_indx[j] = i
+        j = j + 1
+
+testing_dataGRNDTRUTH = np.array([vectors[(int)(i), :] for i in training_indx])
+
 
 if model_id!=2:
-    vectors = (vectors - np.mean(vectors))/float(np.var(vectors))
+    vectors = (vectors - np.mean(vectors,axis=0))/np.var(vectors,axis=0)
+    vectors = vectors/np.max(vectors,axis=0)
     print("dataset normalization: done")
 if model_id == 2:
-    vectors = vectors/float(np.var(vectors))
-    vectors = vectors/float(np.amax(vectors))
+    vectors = vectors/np.var(vectors,axis=0)
+    vectors = vectors/np.max(vectors,axis=0)
 
 
 print("training non-parametric tsne ...")
@@ -224,24 +343,45 @@ print("\tnon-parametric tsne trained in " + str(timeit.default_timer() - start) 
 
 #training_indx = (np.random.random(Ntraining_set) * vectors.shape[0]).astype(int)
 #training_indx = np.sort(np.unique(training_indx))
-training_indx = np.asarray(random.sample(range(1,vectors.shape[0]-1), Ntraining_set))
-testing_indx = np.zeros(vectors.shape[0] - training_indx.shape[0])
-j = 0
-for i in range(vectors.shape[0]):
-    if i in training_indx:
-        continue
-    else:
-        testing_indx[j] = i
-        j = j + 1
 
 
-training_data = np.array([vectors[(int)(i), :] for i in training_indx])
+if onlyEmoGenr==0: # ALL DATASET
+    training_data = np.array([vectors[(int)(i), :] for i in training_indx])
+if onlyEmoGenr == 1: # EMOTTIONS
+    if dataset_type==2 or dataset_type==1:
+        training_data = np.array([vectors[(int)(i), [12,13,14,15,16,17]] for i in training_indx])
+    if dataset_type==0:
+        training_data = np.array([vectors[(int)(i), [12,13,14,15,16,17,12+34,13+34,14+34,15+34,16+34,17+34,12+34*3,13+34*3,14+34*3,15+34*3,16+34*3,17+34*3]] for i in training_indx])
+if onlyEmoGenr == 2: # GENRES
+    if dataset_type==2 or dataset_type==1:
+        training_data = np.array([vectors[(int)(i), [0,1,2,3,4,5,6,7,8,9,10,11,18,19,20,27,31]] for i in training_indx])
+    if dataset_type==0:
+        training_data = np.array([vectors[(int)(i), [0,1,2,3,4,5,6,7,8,9,10,11,18,19,20,27,31,
+                                                     0+34, 1+34, 2+34, 3+34, 4+34, 5+34, 6+34, 7+34, 8+34, 9+34, 10+34, 11+34, 18+34, 19+34, 20+34, 27+34, 31+34,
+                                                     0+34*3, 1+34*3, 2+34*3, 3+34*3, 4+34*3, 5+34*3, 6+34*3, 7+34*3, 8+34*3, 9+34*3, 10+34*3, 11+34*3, 18+34*3, 19+34*3,
+                                                     20+34*3, 27+34*3, 31+34*3]] for i in training_indx])
+
 print("training_data.shape: " + str(training_data.shape))
 
 #training_targets = np.array([Y[(int)(i), :] for i in training_indx])
 #print("training_targets.shape: " + str(training_targets.shape))
 
-testing_data = np.array([vectors[(int)(i), :] for i in testing_indx])
+
+if onlyEmoGenr==0:
+    testing_data = np.array([vectors[(int)(i), :] for i in testing_indx])
+if onlyEmoGenr == 1: # EMOTTIONS
+    if dataset_type==2 or dataset_type==1:
+        testing_data = np.array([vectors[(int)(i), [12,13,14,15,16,17]] for i in testing_indx])
+    if dataset_type==0:
+        testing_data = np.array([vectors[(int)(i), [12,13,14,15,16,17,12+34,13+34,14+34,15+34,16+34,17+34,12+34*3,13+34*3,14+34*3,15+34*3,16+34*3,17+34*3]] for i in testing_indx])
+if onlyEmoGenr == 2: # GENRES
+    if dataset_type==2 or dataset_type==1:
+        testing_data = np.array([vectors[(int)(i), [0,1,2,3,4,5,6,7,8,9,10,11,18,19,20,27,31]] for i in testing_indx])
+    if dataset_type==0:
+        testing_data = np.array([vectors[(int)(i), [0,1,2,3,4,5,6,7,8,9,10,11,18,19,20,27,31,
+                                                     0+34, 1+34, 2+34, 3+34, 4+34, 5+34, 6+34, 7+34, 8+34, 9+34, 10+34, 11+34, 18+34, 19+34, 20+34, 27+34, 31+34,
+                                                     0+34*3, 1+34*3, 2+34*3, 3+34*3, 4+34*3, 5+34*3, 6+34*3, 7+34*3, 8+34*3, 9+34*3, 10+34*3, 11+34*3, 18+34*3, 19+34*3,
+                                                     20+34*3, 27+34*3, 31+34*3]] for i in testing_indx])
 print("testing_data.shape: " + str(testing_data.shape))
 
 #testing_targets = np.array([Y[(int)(i), :] for i in testing_indx])
@@ -265,9 +405,39 @@ sad_groundtruth_tr = np.array([sad_groundtruth[(int)(i)] for i in training_indx]
 sad_groundtruth_tst = np.array([sad_groundtruth[(int)(i)] for i in testing_indx])
 tender_groundtruth_tr = np.array([tender_groundtruth[(int)(i)] for i in training_indx])
 tender_groundtruth_tst= np.array([tender_groundtruth[(int)(i)] for i in testing_indx])
+blues_groundtruth_tr = np.array([blues_groundtruth[(int)(i)] for i in training_indx])
+blues_groundtruth_tst = np.array([blues_groundtruth[(int)(i)] for i in testing_indx])
+easy_groundtruth_tr = np.array([easy_groundtruth[(int)(i)] for i in training_indx])
+easy_groundtruth_tst = np.array([easy_groundtruth[(int)(i)] for i in testing_indx])
+country_groundtruth_tr = np.array([country_groundtruth[(int)(i)] for i in training_indx])
+country_groundtruth_tst = np.array([country_groundtruth[(int)(i)] for i in testing_indx])
+electronica_groundtruth_tr = np.array([electronica_groundtruth[(int)(i)] for i in training_indx])
+electronica_groundtruth_tst = np.array([electronica_groundtruth[(int)(i)] for i in testing_indx])
+folk_groundtruth_tr = np.array([folk_groundtruth[(int)(i)] for i in training_indx])
+folk_groundtruth_tst = np.array([folk_groundtruth[(int)(i)] for i in testing_indx])
+hiphop_groundtruth_tr = np.array([hiphop_groundtruth[(int)(i)] for i in training_indx])
+hiphop_groundtruth_tst= np.array([hiphop_groundtruth[(int)(i)] for i in testing_indx])
+jazz_groundtruth_tr = np.array([jazz_groundtruth[(int)(i)] for i in training_indx])
+jazz_groundtruth_tst = np.array([jazz_groundtruth[(int)(i)] for i in testing_indx])
+latin_groundtruth_tr = np.array([latin_groundtruth[(int)(i)] for i in training_indx])
+latin_groundtruth_tst= np.array([erotic_groundtruth[(int)(i)] for i in testing_indx])
+newage_groundtruth_tr = np.array([newage_groundtruth[(int)(i)] for i in training_indx])
+newage_groundtruth_tst = np.array([newage_groundtruth[(int)(i)] for i in testing_indx])
+pop_groundtruth_tr = np.array([pop_groundtruth[(int)(i)] for i in training_indx])
+pop_groundtruth_tst = np.array([pop_groundtruth[(int)(i)] for i in testing_indx])
+rnbsoul_groundtruth_tr = np.array([rnbsoul_groundtruth[(int)(i)] for i in training_indx])
+rnbsoul_groundtruth_tst = np.array([rnbsoul_groundtruth[(int)(i)] for i in testing_indx])
+rock_groundtruth_tr = np.array([rock_groundtruth[(int)(i)] for i in training_indx])
+rock_groundtruth_tst= np.array([rock_groundtruth[(int)(i)] for i in testing_indx])
+gospel_groundtruth_tr = np.array([gospel_groundtruth[(int)(i)] for i in training_indx])
+gospel_groundtruth_tst = np.array([gospel_groundtruth[(int)(i)] for i in testing_indx])
+reggae_groundtruth_tr = np.array([reggae_groundtruth[(int)(i)] for i in training_indx])
+reggae_groundtruth_tst = np.array([reggae_groundtruth[(int)(i)] for i in testing_indx])
+world_groundtruth_tr = np.array([world_groundtruth[(int)(i)] for i in training_indx])
+country_groundtruth_tst = np.array([world_groundtruth[(int)(i)] for i in testing_indx])
 
-print('vectors size:  %.2fMB' % (sys.getsizeof(vectors)/1000/1000))
-print("data size: %.2fMB" % (sys.getsizeof(data)/1000/1000))
+print('vectors size:  %.2fMB' % (sys.getsizeof(vectors)/1000/float(1000)))
+print("data size: %.2fMB" % (sys.getsizeof(data)/1000/float(1000)))
 print("total amount of memory used: %.2fMB" % ((sys.getsizeof(data) + sys.getsizeof(vectors) + sys.getsizeof(genre_groundtruth)*7 + sys.getsizeof(genre_groundtruth_tr)*7 + sys.getsizeof(genre_groundtruth_tst)*7)/1000/1000))
 
 #########################################################################################################
@@ -346,13 +516,13 @@ if model_id==2:
 ####################################################################################################
 if model_id==1:
     #autoencoder
-    input1 = Input(shape=(vectors.shape[1],))
+    input1 = Input(shape=(training_data.shape[1],))
     input2 = Input(shape=(model_layers[0],))
     input3 = Input(shape=(model_layers[1],))
     input4 = Input(shape=(model_layers[2],))
 
     encoded1 = Dense(model_layers[0])(input1)
-    decoded1 = Dense(vectors.shape[1])(encoded1)
+    decoded1 = Dense(training_data.shape[1])(encoded1)
 
     encoded2 = Dense(model_layers[1])(input2)
     decoded2 = Dense(model_layers[0])(encoded2)
@@ -526,11 +696,18 @@ if model_id==2:
     tmp = "kullback_tsneLoss_RBM"
 
 if dataset_type == 0:
-    tmp = tmp + "concat_F_MEAN_LAST"
+    tmp = tmp + "_concat_F_MEAN_LAST"
 if dataset_type == 1:
-    tmp = tmp + "concat_mean_var"
+    tmp = tmp + "_concat_mean_var"
 if dataset_type == 2:
-    tmp = tmp + "mean"
+    tmp = tmp + "_mean"
+
+if onlyEmoGenr == 0:
+    tmp = tmp + "_all datasetT"
+if onlyEmoGenr == 1:
+    tmp = tmp + "_only_emotions"
+if onlyEmoGenr == 2:
+    tmp = tmp + "_only_genres"
 
 directory_name = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 directory_name =  directory_name + "_" + str(n_samples) + str(tmp) + "-batch" + str(batch_tsne_kullback) + "-epochs" + str(nb_epoch_tsne_kullback)
@@ -559,7 +736,7 @@ knnSens = []
 
 tsneModel = Sequential()
 #if model_id==0:
-tsneModel.add(Dense(model_layers[0], activation='relu', input_shape=(vectors.shape[1],)))
+tsneModel.add(Dense(model_layers[0], activation='relu', input_shape=(training_data.shape[1],)))
 tsneModel.add(Dense(model_layers[1], activation='relu'))
 tsneModel.add(Dense(model_layers[2], activation='relu'))
 tsneModel.add(Dropout(dropout))
@@ -627,6 +804,7 @@ for i in range(nb_epoch_tsne_kullback):
         predicted = knn.predict(tsneModel_tst)
         con_mat = confusion_matrix(sad_groundtruth_tst, predicted, [1, 0])
         sad_sens = con_mat[0,0]/float(np.sum(con_mat[0,:])) #sensitivity
+        genre_groundtruth_tr_shuffle = genre_groundtruth_tr_shuffle[:tsneModel_tr.shape[0]]
         knn.fit(tsneModel_tr, genre_groundtruth_tr_shuffle)
         predicted = knn.predict(tsneModel_tst)
         con_mat = confusion_matrix(genre_groundtruth_tst, predicted,
@@ -651,7 +829,7 @@ tsneModel_tr = tsneModel.predict(training_data)
 tsneModel_tst = tsneModel.predict(testing_data) # 0.31
 
 ######################################################################################################
-globalKullback = tsneModel.predict(vectors)
+globalKullback = tsneModel.predict(np.concatenate((training_data,testing_data)))
 
 from sklearn import decomposition
 
@@ -665,7 +843,7 @@ knn = KNeighborsClassifier(n_neighbors=1)
 #genre_groundtruth_tst = genre_groundtruth_tst[:tsneModel_tst.shape[0]]
 knn.fit(tsneModel_tr, genre_groundtruth_tr)
 predicted = knn.predict(tsneModel_tst)
-con_mat = confusion_matrix(genre_groundtruth_tst, predicted, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
+con_mat_genre = confusion_matrix(genre_groundtruth_tst, predicted, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
 total_accuracy = (np.sum(np.diag(con_mat) / float(np.sum(con_mat))))
 class_accuracy = []
 for i in range(len(genre_dict)):
@@ -674,7 +852,7 @@ for i in range(len(genre_dict)):
 print("Confusion matrix for genrs:\n" + str(con_mat))
 print('Total accuracy: %.5f' % total_accuracy)
 for i in range(len(genre_dict)):
-    print('Genre ' + genre_dict[i] + ' accuracy: %.5f' % class_accuracy[i])
+    print('Genre ' + genre_dict[i] + ' recall: %.5f' % class_accuracy[i])
 
 
 def maccuracy(groundtruth_tr,groundtruth_tst):
@@ -693,16 +871,69 @@ def maccuracy(groundtruth_tr,groundtruth_tst):
     predicted = knn.predict(tsneModel_tst0)
     con_mat = confusion_matrix(groundtruth_tst, predicted, [1, 0])
     output0 = con_mat[0, 0] / float(np.sum(con_mat[0, :]))
-    return [output0, output]
+    perc = len(np.nonzero(groundtruth_tst)[0])/float(len(groundtruth_tst))
+    return [output0, output, perc] #######################
 
-emotion_names=['angry','erotic','fear','joy','sad','tender']
+emotion_names=['angry','erotic','fear','joy','sad','tender','Blues','Country','EasyListening','Electronica','Folk','HipHopUrban','Jazz' ,'Latin','NewAge','Pop','RnBSoul','Rock','Gospel','Reggae','World']
 evaluations = []
 j=0
 for i in [[angry_groundtruth_tr, angry_groundtruth_tst], [erotic_groundtruth_tr, erotic_groundtruth_tst], [fear_groundtruth_tr, fear_groundtruth_tst],
-          [joy_groundtruth_tr, joy_groundtruth_tst], [sad_groundtruth_tr,sad_groundtruth_tst], [tender_groundtruth_tr, tender_groundtruth_tst]]:
+          [joy_groundtruth_tr, joy_groundtruth_tst], [sad_groundtruth_tr,sad_groundtruth_tst], [tender_groundtruth_tr, tender_groundtruth_tst],
+          [blues_groundtruth_tr, blues_groundtruth_tst] ,[country_groundtruth_tr, country_groundtruth_tst] ,[easy_groundtruth_tr, easy_groundtruth_tst] ,
+          [electronica_groundtruth_tr, electronica_groundtruth_tst],
+          [folk_groundtruth_tr, folk_groundtruth_tst], [hiphop_groundtruth_tr, hiphop_groundtruth_tst], [jazz_groundtruth_tr , jazz_groundtruth_tst],
+        [latin_groundtruth_tr , latin_groundtruth_tst], [newage_groundtruth_tr , newage_groundtruth_tst], [pop_groundtruth_tr , pop_groundtruth_tst],
+        [rnbsoul_groundtruth_tr ,rnbsoul_groundtruth_tst], [rock_groundtruth_tr ,rock_groundtruth_tst], [gospel_groundtruth_tr, gospel_groundtruth_tst],
+        [reggae_groundtruth_tr , reggae_groundtruth_tst], [world_groundtruth_tr, country_groundtruth_tst]]:
     evaluations.append(maccuracy(i[0], i[1]))
-    print(str(emotion_names[j]) + ' sensitivity: %.4f -> %.4f' % (evaluations[j][0], evaluations[j][1]))
+    print(str(emotion_names[j]) + ' sensitivity: %.4f -> %.4f ; %.4f%% of the testing dataset ' % (evaluations[j][0], evaluations[j][1], evaluations[j][2]))
     j+=1
+feature_intensity = []
+
+for i in range(21):
+    feature_intensity.append(np.sum(testing_dataGRNDTRUTH[:, i]))
+feature_intensity = np.asarray(feature_intensity)
+evaluations = np.asanyarray(evaluations)
+print("recall weighted(by total intensity) average")
+
+emot_avr=0
+emot_avr0=0
+for [i,j] in enumerate([12,13,14,15,16,17]):
+    emot_avr+=evaluations[i,1]*feature_intensity[j]
+    emot_avr0 += evaluations[i,0] * feature_intensity[j]
+emot_avr = emot_avr/float(np.sum(feature_intensity[[12,13,14,15,16,17]]))
+emot_avr0 = emot_avr0/float(np.sum(feature_intensity[[12,13,14,15,16,17]]))
+print("emotion weighted avr %.4f -> %.4f " % (emot_avr0, emot_avr))
+
+genr_avr0=0
+genr_avr=0
+for [i,j] in enumerate([0,1,2,3,4,5,6,7,8,9,10,11,18,19,20]):
+    genr_avr+=evaluations[i+6,1]*feature_intensity[j]
+    genr_avr0+=evaluations[i+6,0]*feature_intensity[j]
+genr_avr0 = genr_avr0/float(np.sum(feature_intensity[[0,1,2,3,4,5,6,7,8,9,10,11,18,19,20]]))
+genr_avr = genr_avr/float(np.sum(feature_intensity[[0,1,2,3,4,5,6,7,8,9,10,11,18,19,20]]))
+print("genres weighted avr: %.4f -> %.4f " % (genr_avr0, genr_avr))
+
+
+print("recall weighted(by amount of songs) average")
+emot_avrPERC=0
+emot_avrPERC0=0
+for [i,j] in enumerate([12,13,14,15,16,17]):
+    emot_avrPERC+=evaluations[i,1]*evaluations[i,2]
+    emot_avrPERC0 += evaluations[i,0] * evaluations[i,2]
+emot_avrPERC = emot_avrPERC/float(np.sum(evaluations[[0,1,2,3,4,5],2]))
+emot_avrPERC0 = emot_avrPERC0/float(np.sum(evaluations[[0,1,2,3,4,5],2]))
+
+print("emotion weighted avr %.4f -> %.4f " % (emot_avrPERC0, emot_avrPERC))
+genr_avrPERC0=0
+genr_avrPERC=0
+for [i,j] in enumerate([0,1,2,3,4,5,6,7,8,9,10,11,18,19,20]):
+    genr_avrPERC+=evaluations[i+6,1]*evaluations[i+6,2]
+    genr_avrPERC0+=evaluations[i+6,0]*evaluations[i+6,2]
+genr_avrPERC0 = genr_avrPERC0/float(np.sum(evaluations[[6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],2]))
+genr_avrPERC = genr_avrPERC/float(np.sum(evaluations[[6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],2]))
+print("genres weighted avr: %.4f -> %.4f " % (genr_avrPERC0, genr_avrPERC))
+
 
 """
 print("calculating probability distribution preservation/conservation bof the data ...")
@@ -747,7 +978,7 @@ model_encoder = Sequential()
 if model_id == 1:
     # PURE autoencoder
     print("Creating a model for the encoder...")
-    model_encoder.add(Dense(model_layers[0], activation='relu', weights=autoencoder1.layers[1].get_weights(), input_shape=(vectors.shape[1],)))
+    model_encoder.add(Dense(model_layers[0], activation='relu', weights=autoencoder1.layers[1].get_weights(), input_shape=(training_data.shape[1],)))
     model_encoder.add(Dense(model_layers[1], activation='relu', weights=autoencoder2.layers[1].get_weights()))
     model_encoder.add(Dense(model_layers[2], activation='relu', weights=autoencoder3.layers[1].get_weights()))
     model_encoder.add(Dense(2, weights=autoencoder4.layers[1].get_weights()))
@@ -758,7 +989,7 @@ model_RBM = Sequential()
 if model_id==2:
     # PURE RBM
     print("Creating a model for RBM...")
-    model_RBM.add(Dense(model_layers[0], activation='relu', weights=pretrained_weights[0], input_shape=(vectors.shape[1],)))
+    model_RBM.add(Dense(model_layers[0], activation='relu', weights=pretrained_weights[0], input_shape=(training_data.shape[1],)))
     model_RBM.add(Dense(model_layers[1], activation='relu', weights=pretrained_weights[1]))
     model_RBM.add(Dense(model_layers[2], activation='relu', weights=pretrained_weights[2]))
     model_RBM.add(Dense(2, weights=pretrained_weights[3]))
@@ -854,16 +1085,29 @@ if dataset_type == 1:
     file.write("dataset as concatenation [mean var]\n")
 if dataset_type == 2:
     file.write("dataset as mean\n")
+if onlyEmoGenr == 0:
+    file.write("all dataset\n")
+if onlyEmoGenr == 1:
+    file.write("only emotions\n")
+if onlyEmoGenr == 2:
+    file.write("only genres\n")
 file.write("\n\ntraining evaluation: ")
 file.write('Total accuracy: %.5f\n' % total_accuracy)
+file.write("recall weighted(by total intensity) average\n")
+file.write("emotion weighted avr %.4f -> %.4f \n" % (emot_avr0, emot_avr))
+file.write("genres weighted avr: %.4f -> %.4f \n" % (genr_avr0, genr_avr))
+file.write("recall weighted(by amount of songs) average\n")
+file.write("emotion weighted avr %.4f -> %.4f \n" % (emot_avrPERC0, emot_avrPERC))
+file.write("genres weighted avr: %.4f -> %.4f \n" % (genr_avrPERC0, genr_avrPERC))
+file.write(str(con_mat_genre))
+file.write("\n\n")
 for i in range(len(genre_dict)):
-    file.write('Genre ' + genre_dict[i] + ' accuracy: %.5f\n' % class_accuracy[i])
-file.write('angry sensitivity: %.5f\n' % evaluations[0][1])
-file.write('erotic sensitivity: %.5f\n' % evaluations[1][1])
-file.write('fear sensitivity: %.5f\n' % evaluations[2][1])
-file.write('joy sensitivity: %.5f\n' % evaluations[3][1])
-file.write('sad sensitivity: %.5f\n' % evaluations[4][1])
-file.write('tender sensitivity: %.5f\n' % evaluations[5][1])
+    file.write('Genre ' + genre_dict[i] + ' recall: %.5f\n' % class_accuracy[i])
+
+for j in range(evaluations.shape[0]-1):
+    file.write(str(emotion_names[j]) + ' recall: %.4f -> %.4f, %.4f%% of the testing dataset' % (evaluations[j,0], evaluations[j,1], evaluations[j,2]))
+
+
 file.write("training loss: " + str(loss_tr[len(loss_tst)-1]))  #  + ";\ntraining acc: " + str(tsneModel_history.history['acc'][len(tsneModel_history.history['acc'])-1]) +
 file.write("\ntesting loss: " + str(loss_tst[len(loss_tst)-1]))   #  + ";\ntesting acc: " + str(tsneModel_history.history['val_acc'][len(tsneModel_history.history['val_acc'])-1]) )
 file.write('\n' + str(tsneModel.get_config()))

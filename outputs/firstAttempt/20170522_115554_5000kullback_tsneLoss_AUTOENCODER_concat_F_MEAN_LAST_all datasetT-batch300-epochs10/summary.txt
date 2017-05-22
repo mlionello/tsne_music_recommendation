@@ -1,0 +1,55 @@
+number of samples: 5000
+tsne nonparam init: pca -perpl: 30.0 -nnpepochs: 200
+batch300
+epochs10kullback loss, AutoEncoder pretraining
+dataset as concatenation [first, mean(mid), last]
+all dataset
+
+
+training evaluation: Total accuracy: 0.28150
+recall weighted(by total intensity) average
+emotion weighted avr 0.2070 -> 0.5589 
+genres weighted avr: 0.0874 -> 0.2759 
+recall weighted(by amount of songs) average
+emotion weighted avr 0.2564 -> 0.6480 
+genres weighted avr: 0.1628 -> 0.3524 
+[[  1   1   2   0   1   2   0   0   0  15   6   0   0   1   0   7   0   0]
+ [  0   2   1   1   1   7   0   0   1   6   0   0   0   0   0   3   0   1]
+ [  0   0   7   0   8  14   0   1   1  15   3   0   1   6   0  14   5   2]
+ [  0   3   1 167   2   1   0   5   3  12   5  13   0   5   8  28   7   1]
+ [  1   3   4   3  11   9   2   0   2  27   8   0   0   3   1  15   3   3]
+ [  2   2  13   3  12  23   4   0   1  37   8   1   1   6   3  29  10   5]
+ [  1   0   0   0   0   2   0   0   1   4   0   0   0   2   0   0   2   0]
+ [  0   0   0  16   1   1   0   2   1   4   0   1   0   1   1   5   1   0]
+ [  1   1   1   1   1   6   0   0   1   7   2   0   1   0   0   6   3   1]
+ [ 17  10  31  12  29  22   4   0   9 146  11   0   1  13   1  58  22   5]
+ [  2   0   7   6   8   8   0   1   3  22  11   0   1   6   3  29  13   0]
+ [  0   0   0  11   2   0   0   0   0   1   2  11   0   1   0  26   1   0]
+ [  0   0   0   0   2   1   0   0   0   1   0   0   4   1   0   0   1   4]
+ [  0   2   8   6   5   6   0   1   1   7   5   1   0   5   3  21   9   0]
+ [  0   1   0   3   0   0   1   1   0   2   6   1   0   5   3   1   3   0]
+ [  4   1  17  41  17  26   2  10   3  54  30  20   3  21  12 137  22   3]
+ [  2   0   9  11   4  11   1   1   2  26  12   0   1   5   3  23  13   1]
+ [  0   1   1   3   4   5   0   0   0   9   0   0   0   3   0   4   1   4]]
+
+Genre Blues recall: 0.05556
+Genre Classical recall: 0.04348
+Genre Country recall: 0.09091
+Genre Electronic recall: 0.63602
+Genre Entertainment recall: 0.11579
+Genre Folk recall: 0.11250
+Genre Gospel recall: 0.00000
+Genre Hip Hop recall: 0.05882
+Genre International recall: 0.03125
+Genre Jazz recall: 0.36829
+Genre Latin recall: 0.05833
+Genre Metal recall: 0.25455
+Genre New Age recall: 0.28571
+Genre Pop recall: 0.13750
+Genre Reggae recall: 0.14815
+Genre Rock recall: 0.36643
+Genre Soul / RnB recall: 0.10400
+Genre Soundtrack/Score recall: 0.08571
+angry recall: 0.1607 -> 0.5089, 0.0560% of the testing dataseterotic recall: 0.0648 -> 0.2870, 0.0540% of the testing datasetfear recall: 0.2675 -> 0.6955, 0.1215% of the testing datasetjoy recall: 0.1579 -> 0.3910, 0.0665% of the testing datasetsad recall: 0.2136 -> 0.7087, 0.1030% of the testing datasettender recall: 0.3796 -> 0.8054, 0.2055% of the testing datasetBlues recall: 0.0652 -> 0.2174, 0.0230% of the testing datasetCountry recall: 0.0192 -> 0.0000, 0.0260% of the testing datasetEasyListening recall: 0.1391 -> 0.3217, 0.0575% of the testing datasetElectronica recall: 0.5276 -> 0.8160, 0.0815% of the testing datasetFolk recall: 0.0769 -> 0.1154, 0.0260% of the testing datasetHipHopUrban recall: 0.0000 -> 0.2000, 0.0050% of the testing datasetJazz recall: 0.0519 -> 0.2338, 0.0385% of the testing datasetLatin recall: 0.0000 -> 0.0093, 0.0540% of the testing datasetNewAge recall: 0.1538 -> 0.4615, 0.0195% of the testing datasetPop recall: 0.0000 -> 0.2222, 0.0090% of the testing datasetRnBSoul recall: 0.0000 -> 0.2353, 0.0085% of the testing datasetRock recall: 0.1429 -> 0.5079, 0.0315% of the testing datasetGospel recall: 0.0000 -> 0.3000, 0.0050% of the testing datasetReggae recall: 0.0000 -> 0.0000, 0.0005% of the testing datasettraining loss: 0.00296874595806
+testing loss: 0.0030558044867
+[{'class_name': 'Dense', 'config': {'W_constraint': None, 'b_constraint': None, 'name': 'dense_9', 'output_dim': 80, 'activity_regularizer': None, 'trainable': True, 'init': 'glorot_uniform', 'bias': True, 'input_dtype': 'float32', 'input_dim': 136, 'b_regularizer': None, 'W_regularizer': None, 'activation': 'relu', 'batch_input_shape': (None, 136)}}, {'class_name': 'Dense', 'config': {'W_constraint': None, 'b_constraint': None, 'name': 'dense_10', 'activity_regularizer': None, 'trainable': True, 'init': 'glorot_uniform', 'bias': True, 'input_dim': 80, 'b_regularizer': None, 'W_regularizer': None, 'activation': 'relu', 'output_dim': 80}}, {'class_name': 'Dense', 'config': {'W_constraint': None, 'b_constraint': None, 'name': 'dense_11', 'activity_regularizer': None, 'trainable': True, 'init': 'glorot_uniform', 'bias': True, 'input_dim': 80, 'b_regularizer': None, 'W_regularizer': None, 'activation': 'relu', 'output_dim': 500}}, {'class_name': 'Dropout', 'config': {'p': 0.01, 'trainable': True, 'name': 'dropout_1'}}, {'class_name': 'Dense', 'config': {'W_constraint': None, 'b_constraint': None, 'name': 'dense_12', 'activity_regularizer': None, 'trainable': True, 'init': 'glorot_uniform', 'bias': True, 'input_dim': 500, 'b_regularizer': None, 'W_regularizer': None, 'activation': 'linear', 'output_dim': 2}}]
