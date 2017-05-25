@@ -1,0 +1,289 @@
+/* Sticky footer styles
+-------------------------------------------------- */
+html {
+  position: relative;
+  min-height: 100%;
+}
+body {
+  /* Margin bottom by footer height and padding for navbar */
+  margin-bottom: 60px;
+  padding-top: 52px;
+}
+.footer {
+  position:fixed;
+  display: table-row;
+  bottom: 0;
+  width: 100%;
+  /* Set the fixed height of the footer here */
+  height: auto;
+  min-height:90px;
+  background-color: #e4e4e4;
+  border-radius: 9px;
+  -webkit-transition: all 700ms ease;
+  -moz-transition: all 700ms ease;
+  -ms-transition: all 700ms ease;
+  -o-transition: all 700ms ease;
+  transition: all 700ms ease;
+}
+
+div.vertical {
+    width: 320px;
+    height: 80px;
+
+    float:right;
+    margin:5px 0 0 40px;
+}
+
+/* Custom page CSS
+-------------------------------------------------- */
+/* Not required for template or sticky footer method. */
+
+body > .container {
+  position: absolute;
+  padding: 0 0 0;
+  width: 100%;
+}
+.container .text-muted {
+  margin: 20px 0;
+}
+
+.explorer{
+  position: relative;
+  padding: 0 20px;
+  min-width: 700px;
+  max-height: 180px;
+}
+
+#overlay {
+     visibility: hidden;
+     position: fixed;
+     left: 0px;
+     top: 0px;
+     width:100%;
+     height:100%;
+     text-align:center;
+     z-index: 1000;
+     background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+#overlay div {
+     min-width:400px;
+     max-height:400px;
+     display: inline-block;
+     margin: 100px auto;
+     overflow: auto;
+     background-color: #ffffff;
+     color:#777777;
+     border:1px solid #f5f5f5;
+     padding:15px 30px;
+     margin-right: -10px;
+     text-align:left;
+}
+
+#time{
+    color: #ffffff;
+    float: right;
+    margin: 47px 10px 0 0;
+    font-size: 28px;
+}
+
+#time:hover,
+#time:focus {
+    color: #ff3468;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.manager{
+  width:20px;
+  height:20px;
+
+  position:relative;
+  float:right;
+  margin: 35px 0 35px 10px;
+  outline: none;
+  -moz-appearance: none;
+  -moz-outline: none;
+
+  border: 0;
+}
+
+.play{
+  width:30px;
+  height:30px;
+
+  position:relative;
+  float:right;
+  margin: 30px 10px;
+  outline: none;
+  -moz-appearance: none;
+  -moz-outline: none;
+
+  border: 0;
+}
+
+
+.drop1{
+  width:80px;
+  height:30px;
+
+  float:left;
+  margin: 30px 0 30px 10px;
+  background-color: #ffffff;
+  color: #777777;
+  outline: none;
+  border-radius: 7px;
+  -webkit-border-radius:7px;
+  -moz-appearance: none;
+  -moz-outline: none;
+
+  border: 0;
+}
+
+.image{
+  float:left;
+  margin: 20px 0 20px 40px;
+  outline: none;
+  cursor: pointer;
+  -moz-appearance: none;
+  -moz-outline: none;
+
+  border: 0;
+}
+
+/* Popup container */
+.popup {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+/* The actual popup (appears on top) */
+.popup .popuptext {
+    visibility: hidden;
+    min-width: 200px;
+    background-color: #555;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px 0;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -125px;
+    margin-bottom: 6px;
+}
+
+/* Popup arrow */
+.popup .popuptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #555 transparent transparent transparent;
+}
+
+/* Toggle this class when clicking on the popup container (hide and show the popup) */
+.popup .show {
+    visibility: visible;
+    -webkit-animation: fadeIn 1s;
+    animation: fadeIn 1s
+}
+
+/* Add animation (fade in the popup) */
+@-webkit-keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+
+@keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity:1 ;}
+}
+
+.drop1:hover, .drop2:hover{
+  background-color: #f5f5f5;
+}
+
+.drop1, .drop2{
+  -webkit-transition: all 400ms ease;
+  -moz-transition: all 400ms ease;
+  -ms-transition: all 400ms ease;
+  -o-transition: all 400ms ease;
+  transition: all 400ms ease;
+}
+
+.drop2, .drop0{
+  width:100px;
+  height:30px;
+
+  float:right;
+  margin-top: 10px;
+  margin-right: 10px;
+  background-color: #ffffff;
+  color: #777777;
+  outline: none;
+  border-radius: 7px;
+  -webkit-border-radius:7px;
+  -moz-appearance: none;
+  -moz-outline: none;
+
+  border: 0;
+
+}
+
+.ui-autocomplete{
+  position:relative;
+  float: right;
+  padding: 2px 0;
+  margin: -50px 160px 0 0;
+  min-width:40px;
+  max-height: 400px;
+  max-width: 100px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  color:#777777;
+  border-radius: 7px;
+  -webkit-border-radius:7px;
+  -moz-appearance: none;
+  -moz-outline: none;
+}
+
+.ui-menu-item:hover,
+.ui-menu-item-wrapper:hover,
+.ui-menu-item:focus,
+.ui-menu-item-wrapper:focus,
+.ui-state-hover,
+.ui-state-active a,
+.ui-state-active a:link,
+.ui-state-active a:visited
+{
+    border: none ;
+    background-color: #f5f5f5;
+    color: #777777;
+    margin: -0px;
+}
+.ui-widget-content .ui-state-active {
+    border: none ;
+    background-color: #f5f5f5;
+    color: #777777;
+    margin: -0px;
+}
+
+#player{
+  width:100%;
+  height:auto;
+}
+
+canvas {
+  width: 100%;
+  height: auto;
+}
+
+code {
+  font-size: 80%;
+}
