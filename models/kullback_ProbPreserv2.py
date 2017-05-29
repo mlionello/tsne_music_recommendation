@@ -37,7 +37,7 @@ Ntraining_set = 7500
 model_layers = [80,80,500]
 
 batch_tsne_kullback = 300
-nb_epoch_tsne_kullback = 10
+nb_epoch_tsne_kullback = 100
 
 
 perplexity = 30.0 #30.0
@@ -45,7 +45,7 @@ n_epochs_nnparam = 200 #2000
 nnparam_init='pca' #'pca'
 dropout = 0.01
 
-checkoutEpoch = 2
+checkoutEpoch = 5
 
 rbm_batch = batch_tsne_kullback
 rbm_epochs = nb_epoch_tsne_kullback
@@ -1113,6 +1113,7 @@ file.write("\ntesting loss: " + str(loss_tst[len(loss_tst)-1]))   #  + ";\ntesti
 file.write('\n' + str(tsneModel.get_config()))
 file.close()
 filename = directory_name_output +"/" + "overall.png"
+fig.tight_layout()
 fig.savefig(filename)
 filename = directory_name_output +"/" + "predictions.png"
 fig2.savefig(filename)
